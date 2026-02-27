@@ -1,0 +1,16 @@
+order_id,restaurant,product,quantity,unit_price,date,status
+1,Burger House,Classic Burger,2,32.90,2024-03-01,delivered
+2,Burger House,Cheese Fries,1,18.50,2024-03-01,delivered
+3,Sushi Place,Combo Salmao,1,89.90,2024-03-01,delivered
+4,Pizza Roma,Margherita,3,45.00,2024-03-01,delivered
+5,Taco Loco,Burrito Supreme,2,28.00,2024-03-01,cancelled
+6,Sushi Place,Temaki,4,25.00,2024-03-02,delivered
+7,Burger House,Double Bacon,1,42.90,2024-03-02,delivered
+8,Pizza Roma,Pepperoni,2,52.00,2024-03-02,delivered
+9,Taco Loco,Nachos,3,22.00,2024-03-02,delivered
+10,Sushi Place,Uramaki,0,35.00,2024-03-02,cancelled
+11,Burger House,Milkshake,5,15.00,2024-03-03,delivered
+12,Pizza Roma,Calzone,1,38.00,2024-03-03,delivered
+13,Taco Loco,Quesadilla,2,24.00,2024-03-03,delivered
+14,Sushi Place,Sashimi,3,65.00,2024-03-03,delivered
+15,Burger House,Onion Rings,2,14.00,2024-03-03,cancelled
