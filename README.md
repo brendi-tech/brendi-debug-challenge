@@ -8,6 +8,27 @@ O dev anterior saiu da empresa e o código está com **bugs**. Alguns endpoints 
 
 ## Como rodar
 
+### Criação do ambiente virtual
+
+Recomendamos usar um ambiente virtual para isolar as dependências do projeto:
+
+```bash
+# Criar o ambiente virtual
+python -m venv venv
+
+# Ativar o ambiente virtual
+# No macOS/Linux:
+source venv/bin/activate
+
+# No Windows (CMD):
+venv\Scripts\activate
+
+# No Windows (PowerShell):
+# venv\Scripts\Activate.ps1
+```
+
+### Instalação e execução
+
 ```bash
 pip install -r requirements.txt
 python app.py
