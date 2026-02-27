@@ -6,6 +6,11 @@ Você acabou de entrar em um time que gerencia uma plataforma de pedidos para re
 
 O dev anterior saiu da empresa e o código está com **bugs**. Alguns endpoints crasham, outros retornam dados incorretos.
 
+## Requisitos
+
+- **Python 3.9 ou superior** (Flask 3.1.0 requer Python 3.9+)
+- pip (gerenciador de pacotes Python)
+
 ## Como rodar
 
 ### Criação do ambiente virtual
