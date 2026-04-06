@@ -1,2 +1,4 @@
 __pycache__/
-GUIA-AVALIADOR.md
+*.pyc
+node_modules/
+dist/
