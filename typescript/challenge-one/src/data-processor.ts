@@ -73,7 +73,7 @@ export function getPopularProducts(
   }
 
   const ranked = Object.entries(productQty).sort((a, b) => b[1] - a[1]);
-  return ranked.slice(0, n - 1).map(([product, qty]) => ({ product, quantity: qty }));
+  return ranked.slice(1, n).map(([product, qty]) => ({ product, quantity: qty }));
 }
 
 export function getAllRestaurantsReport(orders: Order[]) {
