@@ -1,0 +1,19 @@
+{
+  "name": "brendi-debug-challenge-one",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "ts-node src/app.ts",
+    "test": "ts-node test_endpoints.ts"
+  },
+  "dependencies": {
+    "csv-parse": "^5.6.0",
+    "express": "^4.21.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.7.0"
+  }
+}
