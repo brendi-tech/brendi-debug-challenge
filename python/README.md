@@ -53,15 +53,6 @@ python test_endpoints.py
 
 Você vai ver vários testes falhando. Seu objetivo é **corrigir os bugs no código até que todos os testes passem**.
 
-**Fluxo sugerido:**
-1. Rode `python test_endpoints.py` e veja quais testes falham
-2. Comece pelo primeiro erro — geralmente indica o bug mais básico
-3. Corrija o bug no código
-4. Rode os testes de novo pra ver se mais testes passam
-5. Repita até todos passarem
-
-> Dica: alguns bugs são independentes, outros têm efeito cascata (corrigir um pode resolver outros automaticamente). Fique atento a isso.
-
 ### Parte 2 — Melhoria (últimos 20-30 min)
 
 Após todos os testes passarem, melhore o código como achar necessário. Exemplos:

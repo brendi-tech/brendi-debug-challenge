@@ -34,15 +34,6 @@ npm test
 
 Voce vai ver varios testes falhando. Seu objetivo e **corrigir os bugs no codigo ate que todos os testes passem**.
 
-**Fluxo sugerido:**
-1. Rode `npm test` e veja quais testes falham
-2. Comece pelo primeiro erro — geralmente indica o bug mais basico
-3. Corrija o bug no codigo (reinicie o servidor se necessario)
-4. Rode os testes de novo pra ver se mais testes passam
-5. Repita ate todos passarem
-
-> Dica: alguns bugs sao independentes, outros tem efeito cascata (corrigir um pode resolver outros automaticamente). Fique atento a isso.
-
 ### Parte 2 — Melhoria (ultimos 20-30 min)
 
 Apos todos os testes passarem, melhore o codigo como achar necessario. Exemplos:
