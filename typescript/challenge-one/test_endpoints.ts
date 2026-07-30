@@ -17,22 +17,41 @@ const YELLOW = "\x1b[93m";
 const RESET = "\x1b[0m";
 const BOLD = "\x1b[1m";
 
-function fetch(path: string): Promise<{ data: any; error: string | null }> {
+function fetch(
+  path: string
+): Promise<{ data: any; status: number | null; error: string | null }> {
   return new Promise((resolve) => {
     http
       .get(`${BASE_URL}${path}`, (res) => {
+        const status = res.statusCode ?? null;
         let body = "";
         res.on("data", (chunk) => (body += chunk));
         res.on("end", () => {
+          if (status !== 200) {
+            resolve({
+              data: null,
+              status,
+              error: `HTTP ${status} ${res.statusMessage ?? ""} em GET ${path}`.trim(),
+            });
+            return;
+          }
           try {
-            resolve({ data: JSON.parse(body), error: null });
+            resolve({ data: JSON.parse(body), status, error: null });
           } catch {
-            resolve({ data: null, error: `Invalid JSON: ${body}` });
+            resolve({
+              data: null,
+              status,
+              error: `Resposta nao e JSON valido: ${body.slice(0, 200)}`,
+            });
           }
         });
       })
       .on("error", (err) => {
-        resolve({ data: null, error: `Servidor inacessivel: ${err.message}` });
+        resolve({
+          data: null,
+          status: null,
+          error: `Servidor inacessivel: ${err.message}`,
+        });
       });
   });
 }
@@ -84,8 +103,7 @@ async function testEndpoint(
   const { data, error } = await fetch(path);
 
   if (error) {
-    console.log(`  ${RED}ERRO${RESET} Nao foi possivel acessar o endpoint`);
-    console.log(`         ${error}`);
+    console.log(`  ${RED}ERRO${RESET} ${error}`);
     return { passed: 0, failed: 1 };
   }
 
