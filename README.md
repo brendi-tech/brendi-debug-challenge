@@ -8,6 +8,7 @@ Desafios tecnicos de debug para entrevistas.
 |---------|-------|-------|
 | Python | Flask + CSV | [`python/`](./python/) |
 | Challenge One | Express + CSV (TypeScript) | [`typescript/challenge-one/`](./typescript/challenge-one/) |
+| Challenge Two | Express + Postgres (TypeScript) — webhooks de pagamento, foco Finance | [`typescript/challenge-two/`](./typescript/challenge-two/) |
 
 ## Como usar
 

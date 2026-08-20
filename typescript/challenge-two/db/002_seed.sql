@@ -1,0 +1,37 @@
+INSERT INTO restaurants (id, name) VALUES
+    ('rest_pizza_roma',           'Pizza Roma'),
+    ('rest_sushi_place',          'Sushi Place'),
+    ('rest_burger_house',         'Burger House'),
+    ('rest_taco_loco',            'Taco Loco'),
+    ('rest_cantina_bella',        'Cantina Bella'),
+    ('rest_padaria_aurora',       'Padaria Aurora'),
+    ('rest_sabor_mineiro',        'Sabor Mineiro'),
+    ('rest_wok_express',          'Wok Express'),
+    ('rest_green_bowl',           'Green Bowl'),
+    ('rest_churrascaria_gaucha', 'Churrascaria Gaucha'),
+    ('rest_doce_vida',            'Doce Vida'),
+    ('rest_pastel_do_ze',         'Pastel do Ze'),
+    ('rest_emporio_sp',           'Emporio Sao Paulo'),
+    ('rest_casa_do_acai',         'Casa do Acai'),
+    ('rest_bistro_lumiere',       'Bistro Lumiere'),
+    ('rest_temaki_bar',           'Temaki Bar'),
+    ('rest_pizzaria_napoli',      'Pizzaria Napoli'),
+    ('rest_boteco_esquina',       'Boteco da Esquina'),
+    ('rest_dona_rosa',            'Comida Caseira Dona Rosa'),
+    ('rest_frango_real',          'Frango Assado Real'),
+    ('rest_marmita_fit',          'Marmita Fit'),
+    ('rest_sopas_cia',            'Sopas e Cia'),
+    ('rest_crepe_antigo',         'Crepe Antigo'),
+    ('rest_hotdog_mania',         'Hot Dog Mania'),
+    ('rest_arabesco_grill',       'Arabesco Grill'),
+    ('rest_curry_house',          'Curry House'),
+    ('rest_veggie_garden',        'Veggie Garden'),
+    ('rest_cafe_central',         'Cafe Central'),
+    ('rest_sorveteria_polar',     'Sorveteria Polar'),
+    ('rest_cozinha_nordestina',   'Cozinha Nordestina'),
+    ('rest_pescados_porto',       'Pescados do Porto'),
+    ('rest_massa_nostra',         'Massa Nostra');
+
+-- Todo restaurante comeca com saldo zerado.
+INSERT INTO balances (restaurant_id, balance)
+SELECT id, 0 FROM restaurants;
