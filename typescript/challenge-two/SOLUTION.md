@@ -10,15 +10,57 @@ O bug e uma race condition no credito de saldo. O handler do webhook faz
 **check-then-act**. Quando o PSP reentrega o mesmo evento e as duas entregas se
 sobrepoem, as duas passam pela checagem e as duas creditam.
 
-A tabela `payments` fica **correta** (uma linha por pagamento) porque existe
-`UNIQUE (payment_id, status)` e o `INSERT` usa `ON CONFLICT DO NOTHING`. O
-efeito colateral duplicado esta somente no saldo — e por isso que o sintoma e
-"saldo maior que a soma dos pagamentos".
+A tabela `payments` **nao** tem restricao de unicidade, e o `INSERT` usa
+`ON CONFLICT DO NOTHING` sem alvo — que, sem constraint, nunca dispara. Entao as
+duas entregas concorrentes **gravam duas linhas** para o mesmo pagamento *e* o
+saldo e creditado duas vezes. O sintoma e "saldo maior que a soma real dos
+pagamentos", e a tabela `payments` tambem fica com o mesmo pagamento repetido.
+
+A conciliacao deduplica por `payment_id` (`DISTINCT ON`), entao o total esperado
+reflete os pagamentos **reais**, nao o numero de linhas. E por isso que ela ainda
+acusa divergencia: o saldo dobrou, mas o pagamento real e um so. (Se ela somasse
+todas as linhas, as duas linhas duplicadas bateriam com o saldo dobrado e o bug
+ficaria escondido.)
 
 A janela do `load-webhooks` manda 128 pagamentos confirmados (4 levas x 32
 restaurantes), entao o saldo de cada restaurante e a soma de 4 pagamentos e o
 desvio de um deles fica diluido no total. Nao da para achar o problema
 "de olho" no saldo: so a conciliacao mostra.
+
+## Dois bugs em sequencia
+
+O desafio tem, na pratica, **dois defeitos encadeados** — e o segundo so fica
+obvio depois de corrigir o primeiro. Medido nesta maquina (Docker Desktop no
+macOS, `PG_POOL_MAX=8`):
+
+| Estado | Linhas duplicadas em `payments` | Divergencia de saldo (`RETRY_GAP=2`) |
+|--------|--------------------------------|--------------------------------------|
+| Como entregue (sem constraint) | **sim** | 8 em 20 (~40%) |
+| Depois de adicionar a constraint (codigo ainda com bug) | nao | **12 em 12 (100%)** |
+| Constraint + correcao de codigo | nao | 0 em 20 |
+
+**Bug 1 — o extrato nao bate.** Sem `UNIQUE (payment_id, status)`, o
+`ON CONFLICT DO NOTHING` nunca dispara e a reentrega concorrente grava uma
+segunda linha para o mesmo pagamento. A tabela `payments` fica com o pagamento
+repetido. Correcao: **adicionar a constraint** — isso limpa o extrato.
+
+**Bug 2 — o saldo dobra (o do ticket).** O credito e check-then-act +
+read-modify-write, entao a reentrega credita duas vezes. Adicionar a constraint
+**nao corrige isso** — e, contra-intuitivamente, deixa o bug do saldo *mais*
+frequente: o indice unico faz as duas entregas serializarem no `INSERT`, forcando
+a segunda a ler o saldo ja creditado (por isso a divergencia salta de ~40% para
+100% com `RETRY_GAP=2`). Correcao: gatear o credito pelo `rowCount` do `INSERT`
+mais `UPDATE ... balance = balance + $1`.
+
+A conciliacao usa `DISTINCT ON (payment_id)`, entao mede o saldo contra os
+pagamentos **reais**, nao contra o numero de linhas. E o que garante que ela
+acusa o Bug 2 mesmo depois que o Bug 1 sumir — e, antes disso, que ela nao seja
+enganada pelas linhas duplicadas do Bug 1.
+
+Um candidato pode entrar por qualquer lado: alguns notam a linha duplicada
+primeiro (Bug 1) e so depois percebem que o saldo continua errado; outros vao
+direto ao saldo. O sinal forte e perceber que **sao dois** — e que a constraint
+sozinha troca um sintoma pelo outro.
 
 ## O codigo com o bug
 
@@ -33,7 +75,7 @@ const alreadyProcessed = await client.query(
 );
 if ((alreadyProcessed.rowCount ?? 0) > 0) return { outcome: "duplicate" };
 
-// 2. o INSERT engole o conflito em silencio e o fluxo continua
+// 2. sem UNIQUE na tabela, o ON CONFLICT DO NOTHING nunca dispara: as duas inserem
 await client.query(
   `INSERT INTO payments (...) VALUES (...) ON CONFLICT DO NOTHING`, ...
 );
@@ -53,7 +95,7 @@ Sao dois defeitos independentes, e **os dois precisam ser corrigidos**:
 
 | # | Defeito | Consequencia |
 |---|---------|--------------|
-| 1 | Idempotencia por `SELECT` antes do `INSERT` (check-then-act) | Duas entregas concorrentes passam as duas |
+| 1 | Idempotencia por `SELECT` antes do `INSERT` (check-then-act), sem `UNIQUE` na tabela | Duas entregas concorrentes passam as duas e gravam **duas linhas** para o mesmo pagamento |
 | 2 | Saldo atualizado por read-modify-write sem lock | O credito e aplicado duas vezes (ou perdido) |
 
 O `BEGIN`/`COMMIT` que envolve tudo e uma **pista falsa**: em `READ COMMITTED`
@@ -61,53 +103,50 @@ O `BEGIN`/`COMMIT` que envolve tudo e uma **pista falsa**: em `READ COMMITTED`
 apply. Se o candidato disser "ja tem transacao, entao esta seguro", explore isso
 — e um dos melhores momentos da entrevista.
 
-## Por que so a UNIQUE em payment_id nao resolve
+## Por que so adicionar a constraint nao resolve
 
-E a armadilha principal do desafio. Verificado na pratica.
+A constraint faz **parte** da correcao — sem ela o `ON CONFLICT DO NOTHING` que
+ja esta no codigo nunca dispara, entao as reentregas concorrentes gravam linha
+duplicada. Mas adicionar **so** a constraint, sem gatear o credito pelo resultado
+do `INSERT`, nao fecha o bug. E a armadilha principal do desafio.
 
-Rodando com `RETRY_GAP=2` (configuracao em que a race acontece de forma quase
-deterministica, para a comparacao nao ficar mascarada pela intermitencia):
+Com `ALTER TABLE payments ADD CONSTRAINT payments_payment_id_status_key UNIQUE (payment_id, status)`
+e o codigo como esta:
 
-| Schema | Resultado em 12 ciclos de `npm run check` |
-|--------|-------------------------------------------|
-| Como entregue | `ok=0  falhou=12` |
-| Depois de `ALTER TABLE payments ADD CONSTRAINT payments_payment_id_key UNIQUE (payment_id);` | `ok=0  falhou=12` |
+- o segundo `INSERT` passa a bater na constraint e o `ON CONFLICT DO NOTHING`
+  engole o conflito -> a tabela `payments` volta a ter **uma linha** por
+  pagamento (a duplicata some);
+- mas o codigo nao olha `rowCount`, entao o fluxo segue e credita o saldo de novo
+  do mesmo jeito -> o saldo continua dobrado e a conciliacao continua falhando.
 
-Identico — 12 de 12 nos dois casos.
-
-Identico. E o detalhe que fecha o argumento — com a UNIQUE **ativa**, os tres
-eventos reentregues tem exatamente uma linha cada:
-
-```
-    payment_id    | linhas_payments |  soma
-------------------+-----------------+--------
- pay_2026w34_0006 |               1 |  57.42
- pay_2026w34_1021 |               1 | 116.87
- pay_2026w34_2013 |               1 | 103.41
-```
-
-E a conciliacao do mesmo ciclo:
-
-```
-FALHA: 2 restaurante(s) com saldo divergente.
-
-  restaurante                 pagamentos     esperado        saldo         diff
-  Emporio Sao Paulo                 4       389.84       493.25       103.41
-  Pescados do Porto                 4       491.28       608.15       116.87
-```
-
-As linhas estao deduplicadas e o dinheiro continua contado duas vezes — cada
-`diff` e exatamente o valor de um dos pagamentos reentregues.
-A constraint protege a **linha**, nao o **dinheiro**: com
-`ON CONFLICT DO NOTHING` o conflito e engolido em silencio e o fluxo segue para
-o credito do mesmo jeito.
-
-Moral: idempotencia so vale se o resultado do `INSERT` for **verificado** e usado
+A tabela muda, o dinheiro nao. A constraint protege a **linha**, nao o
+**dinheiro**. Ela e **necessaria** (a idempotencia por `INSERT` depende dela),
+mas so vale se o resultado do `INSERT` for **verificado** com `rowCount` e usado
 para decidir se o efeito colateral roda.
+
+> **Efeito colateral que surpreende (bom gancho de entrevista):** a `UNIQUE`
+> tambem cria um indice, e duas entregas concorrentes do mesmo pagamento passam a
+> **serializar** no `INSERT` — a segunda espera a primeira commitar. Isso torna a
+> divergencia *mais* frequente **com** a constraint do que sem ela, porque forca
+> a segunda entrega a ler o saldo ja creditado. Sem a constraint as duas rodam de
+> fato em paralelo, muitas vezes leem o mesmo saldo e o lost update "cancela" a
+> duplicata. Por isso, no schema como entregue (sem constraint), a reproducao e
+> mais rara e nenhum valor de `RETRY_GAP` chega perto de 100% (ver "Como
+> reproduzir"). E um otimo momento para falar sobre o que um indice unico faz
+> alem de rejeitar duplicata.
 
 ## Correcao canonica
 
-Duas mudancas em `applyPaymentEvent`, sem tocar no schema:
+Uma mudanca de **schema** e duas de codigo. Primeiro a constraint que faltava —
+a idempotencia por `INSERT` depende dela (deixe no `db/001_schema.sql`, ou aplique
+com `ALTER TABLE`):
+
+```sql
+ALTER TABLE payments
+  ADD CONSTRAINT payments_payment_id_status_key UNIQUE (payment_id, status);
+```
+
+Depois, em `applyPaymentEvent`:
 
 ```ts
 // Idempotencia: o INSERT e o ponto de decisao. A unique em
@@ -137,16 +176,18 @@ const updated = await client.query(
 );
 ```
 
-Os dois pontos importantes:
+Os tres pontos importantes:
 
-1. **`rowCount === 0` decide** se o efeito colateral roda. O `SELECT` previo
-   pode ate continuar existindo como fast path, mas nao pode ser a unica
-   protecao.
-2. **`balance = balance + $1`** dentro da transacao. O `UPDATE` pega lock na
+1. **A constraint tem que existir.** Sem `UNIQUE (payment_id, status)` o
+   `ON CONFLICT` nao tem em que se apoiar e o `INSERT` nunca deduplica. Adicionar
+   a constraint faz parte da correcao — nao e opcional.
+2. **`rowCount === 0` decide** se o efeito colateral roda. O `SELECT` previo pode
+   ate continuar existindo como fast path, mas nao pode ser a unica protecao.
+3. **`balance = balance + $1`** dentro da transacao. O `UPDATE` pega lock na
    linha, entao as somas serializam e nenhuma se perde.
 
-Verificado: 27 ciclos sem nenhuma divergencia — 15 na configuracao default e 12
-com `RETRY_GAP=2` (configuracao em que o bug falha 12/12).
+Verificado nesta maquina: com a constraint + as duas mudancas de codigo, a
+conciliacao passou em 20/20 ciclos no default e 20/20 com `RETRY_GAP=2`.
 
 E o log depois da correcao, no mesmo pagamento reentregue — a evidencia que o
 candidato deveria mostrar:
@@ -165,21 +206,36 @@ direta de provar que a correcao pegou.
 
 ## Variacoes aceitaveis
 
-Todas resolvem. O que importa e a combinacao **idempotencia + atomicidade**.
+O que importa e a combinacao **idempotencia + atomicidade**. Nenhuma das duas
+sozinha fecha o bug.
+
+**Idempotencia — nao creditar a reentrega:**
+
+| Abordagem | Comentario |
+|-----------|------------|
+| `UNIQUE (payment_id, status)` + `ON CONFLICT ... DO NOTHING` + checar `rowCount` | A canonica. Exige adicionar a constraint no schema. |
+| `pg_advisory_xact_lock(hashtext(payment_id))` antes da checagem | Serializa as entregas do mesmo pagamento sem constraint; a segunda ja ve a linha da primeira. Vale perguntar como escala. |
+| `SET TRANSACTION ISOLATION LEVEL SERIALIZABLE` | Detecta o conflito (erro `40001`), **desde que** trate com retry. Sem retry, devolve 500 e o PSP reentrega — pergunte sobre isso. |
+| `REPEATABLE READ` | Idem: detecta `40001` e tambem precisa de retry. |
+
+**Atomicidade — nao perder/duplicar credito concorrente:**
 
 | Abordagem | Comentario |
 |-----------|------------|
 | `UPDATE ... SET balance = balance + $1` | A canonica. Simples e sem retry. |
-| `SELECT ... FOR UPDATE` no `balances` antes do read-modify-write | Correta. Mantem o calculo na aplicacao; lock explicito e mais facil de explicar. |
-| `SET TRANSACTION ISOLATION LEVEL SERIALIZABLE` | Correta, **desde que** trate `40001` com retry. Se nao tratar, o webhook devolve 500 e o PSP reentrega — pergunte sobre isso. |
-| `REPEATABLE READ` | Tambem detecta o conflito no Postgres (erro 40001) e tambem precisa de retry. |
-| Lock pessimista via `pg_advisory_xact_lock(payment_id)` | Funciona e serializa por pagamento. Vale perguntar como isso escala. |
-| Derivar o saldo de `payments` (`SUM`) em vez de manter coluna | Resposta forte de modelagem. Elimina a classe do bug inteira. Pergunte sobre custo de leitura e snapshot/ledger. |
+| `SELECT ... FOR UPDATE` no `balances` antes do read-modify-write | Correta para a atomicidade, mas **precisa** vir junto de uma idempotencia de verdade — sozinha nao impede o duplo credito da reentrega. |
+
+**Modelagem — elimina as duas classes de uma vez:**
+
+| Abordagem | Comentario |
+|-----------|------------|
+| Derivar o saldo de `payments` (`SUM` do distinct) em vez de manter coluna | Resposta forte de modelagem. Pergunte sobre custo de leitura e snapshot/ledger. |
 | Tabela de ledger append-only + saldo materializado | Resposta senior. Como a Brendi faz de verdade em varios lugares. |
 
 ### Nao aceitar
 
-- **So** adicionar `UNIQUE (payment_id)` — nao resolve (secao acima).
+- **So** adicionar a constraint (`UNIQUE`) sem gatear o credito pelo `rowCount` —
+  deduplica a linha mas o saldo continua dobrado (secao acima).
 - **So** trocar o `SELECT` de duplicidade de lugar — continua check-then-act.
 - Retry/backoff na aplicacao sem tornar o credito idempotente — reduz a janela,
   nao fecha.
@@ -190,20 +246,25 @@ Todas resolvem. O que importa e a combinacao **idempotencia + atomicidade**.
 ## Como reproduzir na hora da entrevista
 
 A falha e intermitente de proposito. Medido nesta maquina (Docker Desktop no
-macOS, `PG_POOL_MAX=8`). A taxa depende de timing, entao espere variacao entre
-maquinas — o que importa e que existe uma faixa intermitente e que os knobs
-deslocam ela:
+macOS, `PG_POOL_MAX=8`, schema **sem** a constraint). A taxa depende de timing,
+entao espere variacao entre maquinas — o que importa e que existe uma faixa
+intermitente:
 
-| Config | Falhas (container) |
-|--------|--------------------|
-| Default (`RETRY_GAP=6`) | 8 em 20 (40%) |
-| `RETRY_GAP=4` | 10 em 12 (83%) |
-| `RETRY_GAP=2` | 12 em 12 (100%) |
+| Config | Falhas em 20 ciclos |
+|--------|---------------------|
+| `RETRY_GAP=2` (mais barulhento) | 8 (40%) |
+| Default (`RETRY_GAP=6`) | 5 (25%) |
+| `RETRY_GAP=0` / `RETRY_GAP=1` | 3 (15%) |
 
-O `RETRY_GAP` e o knob principal: ele controla quantos eventos da leva entram
-entre a entrega original e a reentrega. Gap pequeno = as duas entregas caem na
-mesma leva de conexoes do pool e as duas creditam. Gap grande = a primeira ja
-commitou e a checagem de duplicidade pega a segunda.
+O `RETRY_GAP` controla quantos eventos da leva entram entre a entrega original e
+a reentrega. `RETRY_GAP=2` deixa a divergencia mais provavel; gaps muito pequenos
+aumentam a sobreposicao e o lost update tende a cancelar a duplicata; gaps
+grandes deixam a primeira entrega commitar antes e a checagem de duplicidade pega
+a segunda. **Sem a constraint, nenhum valor chega perto de 100%** — a
+serializacao do indice unico, que garantia a reproducao quase deterministica,
+saiu junto com ela (ver o box em "Por que so adicionar a constraint nao
+resolve"). Para reproduzir de forma **confiavel**, use o roteiro de duas sessoes
+de `psql` abaixo.
 
 Variaveis aceitas pelo `load-webhooks` (de proposito **nao** documentadas no
 README do candidato, para nao entregar a pista de reentrega):
@@ -217,8 +278,11 @@ README do candidato, para nao entregar a pista de reentrega):
 
 A lista `REDELIVERED` no topo do script define quais eventos foram reentregues
 (hoje tres, um em levas diferentes). Cuidado ao mexer: os slots **nao** sao
-equivalentes — slots como 13 e 27 caem numa posicao do pool que race quase
-sempre, e adicionar um deles leva a taxa para 100%.
+equivalentes — alguns caem numa posicao do pool que race com mais frequencia.
+Ainda assim, no schema como entregue (sem constraint) a taxa nao passa muito de
+~40%: a serializacao do indice unico, que levava a 100%, saiu junto com a
+constraint. Adicionar mais eventos a `REDELIVERED` aumenta a taxa, mas nao a
+crava.
 
 Para deixar barulhento na hora da entrevista:
 
@@ -265,10 +329,12 @@ alguma variacao de:
 > adicione `UNIQUE (payment_id)` na tabela `payments` e use
 > `INSERT ... ON CONFLICT DO NOTHING`
 
-Nesse codigo isso **nao resolve** (secao acima: 12/12 falhas com e sem a
-constraint). O `ON CONFLICT DO NOTHING` ja esta la, o conflito e engolido em
-silencio e o credito roda de novo. E o melhor momento do desafio: a sugestao e
-plausivel, tecnicamente correta em abstrato, e errada aqui.
+Adicionar a constraint e de fato **parte** da correcao — sem ela o
+`ON CONFLICT DO NOTHING` que ja esta no codigo nunca dispara. Mas parar ai **nao
+resolve**: a constraint deduplica a linha e o codigo continua creditando o saldo
+de novo, porque nao olha o resultado do `INSERT`. E o melhor momento do desafio:
+a sugestao e plausivel, meio-certa, e incompleta aqui — o candidato so percebe se
+verificar o saldo (e a conciliacao) depois de aplicar.
 
 O que separa os candidatos nao e receber essa sugestao — e o que fazem com ela.
 
@@ -284,7 +350,7 @@ docker compose logs app | grep pay_2026w34_0006
 payment.dedup_check  request_id=c771bcad  rows_found=0
 payment.dedup_check  request_id=c3dc1605  rows_found=0
 payment.recorded     request_id=c771bcad  rows_inserted=1
-payment.recorded     request_id=c3dc1605  rows_inserted=0
+payment.recorded     request_id=c3dc1605  rows_inserted=1
 balance.credited     request_id=c771bcad  balance_before=0.00   balance_after=57.42
 balance.credited     request_id=c3dc1605  balance_before=57.42  balance_after=114.84
 ```
@@ -294,8 +360,14 @@ As tres coisas que essas seis linhas provam, sem precisar de teoria:
 | Linha | Prova |
 |-------|-------|
 | dois `rows_found=0` para o mesmo `payment_id` | a checagem de duplicidade e check-then-act e as duas entregas passaram |
-| `rows_inserted=0` seguido de `balance.credited` | a constraint funcionou na **linha** e o dinheiro entrou de novo — refuta a sugestao da IA por evidencia direta |
-| `balance_before` diferente nas duas | o credito e read-modify-write, cada um partiu do valor que leu |
+| dois `rows_inserted=1` | sem constraint, as duas gravaram linha — o pagamento esta **duplicado** na tabela |
+| `balance_before` diferente nas duas | o credito e read-modify-write, cada um partiu do valor que leu -> saldo dobrado |
+
+Depois de adicionar a constraint (a sugestao da IA), o mesmo `grep` passa a
+mostrar `rows_inserted=1` seguido de `rows_inserted=0` — a linha para de duplicar
+— mas o `balance_after=114.84` continua aparecendo e a conciliacao continua
+falhando. E a prova, por evidencia direta, de que a constraint sozinha nao fecha
+o bug.
 
 Num ciclo que passou aparece `rows_found=1` -> `outcome=duplicate`. Comparar um
 ciclo que falhou com um que passou e o caminho mais curto para o diagnostico.
@@ -305,8 +377,9 @@ ciclo que falhou com um que passou e o caminho mais curto para o diagnostico.
 **Uso forte de IA**
 - Usa a IA para acelerar leitura ("me explique o fluxo desse handler"), e faz o
   diagnostico com evidencia do log/banco
-- Recebe a sugestao da UNIQUE e **testa** antes de aceitar; conclui que nao
-  resolve e explica por que (o `rows_inserted=0` + credito)
+- Recebe a sugestao da UNIQUE, aplica e **testa**; percebe que limpa o extrato
+  mas o saldo continua dobrado, e completa a correcao (gatear pelo `rowCount` +
+  soma atomica)
 - Da contexto real para a IA (schema, log de um ciclo que falhou), em vez de so
   colar o arquivo
 - Percebe quando a IA erra e corrige o rumo, sem abandonar a ferramenta
@@ -315,7 +388,8 @@ ciclo que falhou com um que passou e o caminho mais curto para o diagnostico.
 
 **Uso fraco de IA**
 - Cola o arquivo, aplica o primeiro patch e roda `check` uma vez — se passou,
-  declara resolvido (o desafio passa ~40% das vezes por sorte)
+  declara resolvido (no default o `check` fica verde ~75% das vezes, entao um
+  unico ciclo nao prova nada)
 - Aplica a UNIQUE porque a IA falou, sem verificar, e nao sabe dizer o que ela
   protege
 - Nao consegue explicar o codigo que colou
@@ -363,12 +437,12 @@ sem critica e um sinal; prompt com contexto e verificacao posterior e outro.
 
 **Forte**
 - Reproduz de forma controlada antes de mexer no codigo
-- Vai ao log e traz a evidencia: os dois `rows_found=0`, o `rows_inserted=0`
-  seguido de `balance.credited`
-- Le o `payments` e nota que a linha esta certa e o saldo nao — e usa isso para
-  isolar o defeito
-- Corrige idempotencia **e** atomicidade, e explica por que uma sem a outra nao
-  basta
+- Vai ao log e traz a evidencia: os dois `rows_found=0` e os dois
+  `rows_inserted=1` (a linha duplicada), com `balance_before` diferente
+- Le o `payments`, nota o pagamento **duplicado** e o saldo dobrado, e separa os
+  dois defeitos (extrato x saldo)
+- Corrige idempotencia (incluindo a constraint) **e** atomicidade, e explica por
+  que uma sem a outra nao basta
 - Nao se satisfaz com "rodei e passou"; roda varias vezes ou aumenta a carga
 - Se usou IA: verificou o que ela sugeriu antes de aplicar, e sabe explicar o
   patch final com as proprias palavras
@@ -381,9 +455,9 @@ sem critica e um sinal; prompt com contexto e verificacao posterior e outro.
 - Precisa de dica para perceber que a UNIQUE sozinha nao resolve
 
 **Fraco**
-- Adiciona `UNIQUE (payment_id)`, ve um `check` passar e declara resolvido — o
-  desafio passa ~40% das vezes por sorte, entao um unico ciclo verde nao prova
-  nada
+- Adiciona a constraint, ve um `check` passar por sorte e declara resolvido —
+  sem notar que o extrato limpou mas o saldo continua dobrado (e passa a divergir
+  ate com mais frequencia sob carga). Um unico ciclo verde nao prova nada
 - Aplica patch de IA que nao sabe explicar
 - Ignora os logs mesmo depois de ser perguntado sobre evidencia
 - Culpa o PSP e propoe so aumentar timeout ou tratar retry

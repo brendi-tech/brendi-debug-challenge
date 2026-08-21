@@ -19,15 +19,18 @@ Todo dia roda uma conciliacao que confere uma unica regra:
 
 ## O problema relatado
 
-Abriram um ticket para o time:
+O time de Finance abriu dois relatos que parecem relacionados:
 
-> "De tempos em tempos o saldo consolidado de um restaurante fica maior que a
-> soma dos pagamentos que ele realmente recebeu. Nao e todo dia e nao e sempre o
-> mesmo restaurante. Quando a gente vai conferir, os pagamentos na tabela estao
-> certos — o saldo e que esta errado. Ja pagamos repasse a mais por causa disso."
+> "No extrato de alguns restaurantes o mesmo pagamento aparece mais de uma vez —
+> mesma transacao, mesmo valor, duplicada. Nao e todo dia e nao e sempre o mesmo
+> restaurante."
 
-O time de Finance esta reprocessando planilha na mao para fechar o mes.
-Ninguem conseguiu reproduzir o problema de forma confiavel ainda.
+> "E em alguns casos o saldo consolidado nao bate com a soma dos pagamentos que o
+> restaurante realmente recebeu — costuma ficar maior. Ja pagamos repasse a mais
+> por causa disso."
+
+O time esta reprocessando planilha na mao para fechar o mes. Ninguem conseguiu
+reproduzir os dois de forma confiavel ainda.
 
 ## Requisitos
 
@@ -81,7 +84,7 @@ Se preferir rodar os scripts direto na sua maquina (fora do container), use
 
 ### Parte 1 — Debug (primeiros ~30 min)
 
-Encontre a causa do problema relatado no ticket e corrija.
+Encontre a causa dos relatos do ticket e corrija.
 
 Uma correcao boa aqui:
 
@@ -181,4 +184,5 @@ docker compose exec db psql -U brendi -d brendi_payments
   que mexe com dinheiro.
 - Compartilhe a tela e pense em voz alta, inclusive quando estiver conversando
   com a IA — queremos acompanhar seu raciocinio, nao so o resultado
-- **Nao reescreva o projeto do zero** — corrija o codigo existente
+- **Nao reescreva o projeto do zero** — ajuste o que ja existe (codigo e, se
+  precisar, o schema)

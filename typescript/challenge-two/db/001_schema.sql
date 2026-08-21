@@ -26,9 +26,7 @@ CREATE TABLE payments (
     restaurant_id TEXT           NOT NULL REFERENCES restaurants (id),
     amount        NUMERIC(12, 2) NOT NULL CHECK (amount > 0),
     status        TEXT           NOT NULL,
-    received_at   TIMESTAMPTZ    NOT NULL DEFAULT now(),
-
-    CONSTRAINT payments_payment_id_status_key UNIQUE (payment_id, status)
+    received_at   TIMESTAMPTZ    NOT NULL DEFAULT now()
 );
 
 CREATE INDEX payments_restaurant_id_idx ON payments (restaurant_id);

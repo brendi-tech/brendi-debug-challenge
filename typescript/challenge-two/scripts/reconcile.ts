@@ -17,6 +17,11 @@ interface ReconciliationRow {
  * O saldo consolidado de um restaurante tem que ser exatamente a soma dos
  * pagamentos confirmados que ele recebeu. Qualquer diferenca e dinheiro que
  * aparece (ou desaparece) do repasse.
+ *
+ * Cada pagamento entra na soma uma unica vez: o DISTINCT ON (payment_id)
+ * colapsa reentregas que porventura tenham gravado mais de uma linha para o
+ * mesmo pagamento, entao o total esperado reflete os pagamentos reais, nao o
+ * numero de linhas na tabela.
  */
 async function loadRows(): Promise<ReconciliationRow[]> {
   return withClient(async (client) => {
@@ -32,8 +37,13 @@ async function loadRows(): Promise<ReconciliationRow[]> {
                 SELECT restaurant_id,
                        SUM(amount) AS total,
                        COUNT(*)    AS count
-                  FROM payments
-                 WHERE status = 'confirmed'
+                  FROM (
+                         SELECT DISTINCT ON (payment_id)
+                                payment_id, restaurant_id, amount
+                           FROM payments
+                          WHERE status = 'confirmed'
+                       ORDER BY payment_id
+                       ) confirmed
               GROUP BY restaurant_id
          ) p ON p.restaurant_id = r.id
      ORDER BY r.name`
