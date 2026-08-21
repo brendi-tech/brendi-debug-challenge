@@ -399,39 +399,105 @@ ciclo que falhou com um que passou e o caminho mais curto para o diagnostico.
 
 ### Perguntas para calibrar
 
-- "A IA sugeriu isso. Como voce sabe que funciona?"
-- "Roda de novo umas cinco vezes. Ainda esta confiante?"
-- "Essa constraint que voce adicionou protege o que, exatamente?"
-- "Me mostre no log o momento em que o bug acontece."
-- "Se eu tirar essa linha da sua correcao, o que quebra?"
+Probes rapidos da Parte 1. Para cada um, o que soa fraco vs forte:
+
+- **"A IA sugeriu isso. Como voce sabe que funciona?"**
+  Fraca: "rodei e passou" (um ciclo). Forte: mostra o antes/depois com evidencia
+  (log + conciliacao repetida).
+- **"Roda de novo umas cinco vezes. Ainda esta confiante?"**
+  Fraca: confia no primeiro verde. Forte: sabe que o verde e ~75% por sorte e
+  roda ate estabilizar (ou sobe a carga / `RETRY_GAP=2`).
+- **"Essa constraint que voce adicionou protege o que, exatamente?"**
+  Fraca: "evita duplicados" e para ai. Forte: "protege a linha, nao o dinheiro" —
+  por isso o credito ainda precisa gatear pelo `rowCount`.
+- **"Me mostre no log o momento em que o bug acontece."**
+  Fraca: nao sabe onde olhar. Forte: aponta os dois `rows_found=0`, os
+  `rows_inserted=1` e o `balance_before` diferente.
+- **"Se eu tirar essa linha da sua correcao, o que quebra?"**
+  Fraca: nao sabe. Forte: explica o papel de cada parte (constraint, gate do
+  `rowCount`, soma atomica) e o que cada uma cobre.
 
 Vale registrar o prompt que o candidato usou. Prompt vago com resultado aceito
 sem critica e um sinal; prompt com contexto e verificacao posterior e outro.
 
 ## Roteiro de perguntas para a Parte 2
 
-1. **Direcao do erro.** Aqui o saldo ficou *maior*. O mesmo bug pode fazer o
-   saldo ficar *menor*? (Sim — dois pagamentos **diferentes** do mesmo
-   restaurante chegando juntos causam lost update. Por isso o `load-webhooks`
-   manda no maximo um pagamento por restaurante **por leva**, e espera a leva
-   terminar antes de comecar a proxima: e o que isola o cenario do ticket. Otima
-   pergunta de follow-up: "e se dois pedidos do mesmo restaurante confirmarem no
-   mesmo segundo?" — e se o candidato remover essa serializacao do script, o
-   saldo passa a ficar *menor* que a soma dos pagamentos.)
-2. **Idempotencia de verdade.** E se o PSP reentregar o evento tres dias depois?
-   E se reentregar com `amount` diferente? (Hoje o codigo confia no payload e nao
-   compara valor.)
-3. **Concorrencia entre instancias.** A correcao aguenta 3 replicas do servico?
-4. **Modelagem.** Manter `balances.balance` como coluna mutavel vale a pena, ou
-   um ledger append-only com saldo derivado e melhor? Quando cada um?
-5. **Deteccao.** Essa conciliacao roda uma vez por dia. Como voce descobriria
-   isso em minutos e nao em um fechamento de mes? (Alertas de divergencia,
-   conciliacao continua, invariante checada no proprio commit.)
-6. **Correcao do passado.** Ja pagamos repasse a mais. Como voce corrige os
-   saldos historicos com seguranca?
-7. **Teste de regressao.** Como voce escreve um teste que pega essa regressao no
-   CI sem ser flaky? (Forcar o interleaving com duas conexoes e barreira, em vez
-   de confiar em concorrencia real.)
+Gabarito de consulta rapida para calibrar nivel ao vivo. Cada bloco: o que soa
+**Fraco**, o que basta (**Aceitavel**), o que puxa para **Forte (senior)**, e por
+que a pergunta importa.
+
+### 1. Direcao do erro — o saldo pode ficar *menor*?
+"Aqui o saldo ficou maior. O mesmo bug pode fazer o saldo ficar menor?"
+- **Fraca:** "Nao, sempre maior." Nao enxerga o lost update.
+- **Aceitavel:** Sim — dois pagamentos *diferentes* do mesmo restaurante chegando
+  juntos causam lost update e o saldo fica menor; nota que o `load-webhooks`
+  isola o "maior" mandando 1 pagamento/restaurante por leva.
+- **Forte:** Ve que "maior" (double-apply da reentrega) e "menor" (lost update de
+  pagamentos distintos) sao o mesmo read-modify-write sem lock, e que
+  `balance = balance + $1` fecha os dois.
+- **Por que importa:** separa sintoma de causa; prova que entendeu o mecanismo,
+  nao so o caso do ticket.
+
+### 2. Idempotencia de verdade — reentrega 3 dias depois? com `amount` diferente?
+- **Fraca:** "A constraint resolve", cobrindo so a janela concorrente.
+- **Aceitavel:** A dedup por `(payment_id, status)` vale para sempre, nao so na
+  janela; reconhece que o codigo confia no payload e nao compara `amount`.
+- **Forte:** Trata `amount` divergente como incidente (rejeita/alerta em vez de
+  sobrescrever); discute a chave de idempotencia certa (event_id do PSP vs
+  payment_id) e a semantica de status (confirmed apos failed).
+- **Por que importa:** idempotencia e a *chave certa* + o que fazer no conflito,
+  nao so evitar linha duplicada.
+
+### 3. Concorrencia entre instancias — aguenta 3 replicas?
+- **Fraca:** Propoe mutex/lock em memoria no processo Node.
+- **Aceitavel:** A garantia tem que estar no banco (constraint + UPDATE atomico),
+  entao N replicas sao seguras; mutex em memoria quebraria.
+- **Forte:** Discute onde o lock vive (linha via UPDATE, advisory lock,
+  serializable+retry) e o custo sob varias replicas; menciona pool de conexoes.
+- **Por que importa:** distingue correcao que escala horizontal de gambiarra de
+  processo unico.
+
+### 4. Modelagem — coluna mutavel vs ledger append-only?
+"Manter `balances.balance` como coluna vale a pena, ou um ledger com saldo
+derivado e melhor?"
+- **Fraca:** "Tanto faz" / nao justifica.
+- **Aceitavel:** Coluna mutavel e simples e rapida de ler mas facil de corromper;
+  ledger append-only + saldo derivado e auditavel e mata a classe do bug. Sabe
+  quando usar cada um.
+- **Forte:** Trade-off de custo de leitura (SUM vs coluna) + saldo materializado/
+  snapshot; por que financas tende a ledger; conecta com a conciliacao.
+- **Por que importa:** sai do patch e vai para o design — separa mid de senior.
+
+### 5. Deteccao — conciliacao 1x/dia; como pegar em minutos?
+- **Fraca:** "Rodar a conciliacao mais vezes."
+- **Aceitavel:** Alerta de divergencia (metrica saldo vs soma) e/ou conciliacao
+  continua.
+- **Forte:** Invariante checada no proprio commit (constraint/trigger/CHECK),
+  alerta com SLO, e a diferenca entre *detectar* e *prevenir*.
+- **Por que importa:** maturidade de observabilidade em sistema que mexe com
+  dinheiro.
+
+### 6. Correcao do passado — ja pagamos a mais; como consertar historicos?
+- **Fraca:** `UPDATE` manual no saldo, sem trilha.
+- **Aceitavel:** Recalcular o saldo a partir dos pagamentos reais (distinct), num
+  processo idempotente e auditavel, com backup/dry-run antes.
+- **Forte:** Reconstruir da fonte da verdade (ledger), lancar ajuste explicito em
+  vez de sobrescrever, reconciliar repasses ja feitos e comunicar o impacto.
+- **Por que importa:** em financas, corrigir o passado sem apagar historico e tao
+  importante quanto parar o bug.
+
+### 7. Teste de regressao — pega no CI sem ser flaky?
+- **Fraca:** "Rodar o load varias vezes" — flaky, depende de timing.
+- **Aceitavel:** Forcar o interleaving deterministico com duas conexoes e uma
+  barreira, em vez de depender de concorrencia real; asserta o saldo final.
+- **Forte:** Teste deterministico do lost update *e* do double-apply, mais um
+  teste da invariante de conciliacao como safety net; roda no CI.
+- **Por que importa:** teste flaky nao protege — o candidato tem que saber tornar
+  a corrida deterministica.
+
+> **Se o tempo apertar (30 min ao vivo):** nao da para cobrir as 7. Nucleo **1, 2,
+> 7** (mecanismo, idempotencia de verdade, como provar). **3/4/5/6** conforme o
+> nivel e o tempo — 4 e 6 puxam para senior.
 
 ## Sinais de avaliacao
 
