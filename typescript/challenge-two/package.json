@@ -1,0 +1,24 @@
+{
+  "name": "brendi-debug-challenge-two",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "ts-node-dev --respawn --clear src/app.ts",
+    "load": "ts-node scripts/load-webhooks.ts",
+    "reconcile": "ts-node scripts/reconcile.ts",
+    "reset": "ts-node scripts/reset-ledger.ts",
+    "check": "npm run load && npm run reconcile"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.0",
+    "ts-node": "^10.9.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.7.0"
+  }
+}

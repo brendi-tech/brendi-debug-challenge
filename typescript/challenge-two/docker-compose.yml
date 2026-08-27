@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: brendi
+      POSTGRES_PASSWORD: brendi
+      POSTGRES_DB: brendi_payments
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U brendi -d brendi_payments"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://brendi:brendi@db:5432/brendi_payments
+      PORT: "5070"
+      PG_POOL_MAX: "8"
+    ports:
+      - "5070:5070"
+    volumes:
+      - ./src:/app/src
+      - ./scripts:/app/scripts
