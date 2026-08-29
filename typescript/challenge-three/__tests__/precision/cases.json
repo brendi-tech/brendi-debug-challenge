@@ -19,7 +19,7 @@
   },
   {
     "useCase": "ambiguidade (não alucinar)",
-    "messages": [{ "from": "customer", "text": "queria aquele hambúrguer com bacon" }],
+    "messages": [{ "from": "customer", "text": "me vê um hambúrguer" }],
     "expectClarification": true
   },
   {
