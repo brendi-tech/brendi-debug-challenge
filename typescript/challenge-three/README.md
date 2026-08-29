@@ -55,6 +55,10 @@ npm run precision     # qualidade da interpretação com a LLM real
   de ideia.
 - **Cabeça de escala:** latência, custo (modelo, menos chamadas, cache) e como
   você **mediria precisão** em produção.
+- **Observabilidade das chamadas de LLM.** A gente vive de debugar precisão em
+  produção. Instrumente suas chamadas pra dar visibilidade do que entrou e do que
+  o modelo decidiu — o suficiente pra entender *por que* um pedido saiu como saiu.
+  Deixe isso aparecendo quando roda.
 
 ## O que já vem pronto
 

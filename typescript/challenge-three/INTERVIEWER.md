@@ -26,6 +26,7 @@ código determinístico. Ninguém disse isso pra ele no enunciado.
 |---|---|---|
 | **Arquitetura / testabilidade** | achou a separação sozinho; determinístico isolado e testável | monólito frágil; regra no prompt |
 | **LLM engineering** | saída estruturada, sinaliza ambiguidade, trata falha | chuta no ambíguo, alucina produto/preço |
+| **Observabilidade** | instrumenta a call (tokens/latência + o que o modelo decidiu); dá pra debugar precisão | chamada é caixa-preta; não dá pra ver por que errou |
 | **Domínio (casos que doem)** | acerta incluso-vs-extra, obrigatórios, mudança de ideia | só happy-path |
 | **Cabeça de escala** | fala de latência/custo/modelo/cache + como medir precisão | não menciona |
 | **Código + julgamento** | limpo, tipado, `SOLUTION.md` com tradeoffs e "em escala" | decisões não-explicadas |
