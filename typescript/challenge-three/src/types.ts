@@ -1,90 +1,130 @@
 // ============================================================================
-// Contratos do desafio. Você PODE ajustar/estender estes tipos se justificar
-// no README — mas os testes deterministicos dependem do formato de `Order`.
+// Tipos do desafio. Espelham (de forma enxuta) o modelo real do bot da Brenda:
+//   - Menu: listas planas (categories/products/customs) ligadas por path/slug,
+//     não objetos aninhados. (brendi-commons/types/menu + product)
+//   - Complementos: ProductCustom, uniao discriminada por `type`.
+//   - Pedido montado: Checkout (o que o placeOrder produz e o que os testes de
+//     precisao comparam). Sem preco por item — so `totalPrice`.
+//
+// Cortamos o que nao importa pra este desafio: pizza, o Order persistido
+// (pesado), e os campos de delivery/payment/customer do Checkout.
 // ============================================================================
 
-export type Money = number; // sempre em centavos, inteiro
+// ---- Menu / cardapio -------------------------------------------------------
 
-export type MenuOption = { id: string; name: string; priceCents: Money };
-
-export type MenuItem = {
+export type ProductCustomChoice = {
   id: string;
-  name: string;
-  aliases?: string[];
-  priceCents: Money;
-  available: boolean;
-  /** Adicionais opcionais e pagos (ex.: bacon, ovo). */
-  addons?: MenuOption[];
-  /** Escolha obrigatoria com variacao de preco (ex.: tamanho da batata). */
-  options?: { group: string; choices: MenuOption[] };
-  /**
-   * Escolha JA INCLUSA no item, com N inclusas + extras pagos.
-   * Ex.: marmita vem com 1 carne; a 2a carne e um extra pago.
-   */
-  includedChoice?: {
-    group: string;
-    includedQty: number;
-    extraPriceCents: Money;
-    choices: { id: string; name: string }[];
-  };
-  isCombo?: boolean;
-  comboItems?: string[];
+  title: string;
+  /** Preco somado ao escolher esta opcao (reais). */
+  extraPrice: number;
+  active?: boolean;
 };
 
-export type Menu = { storeId: string; storeName: string; items: MenuItem[] };
+/**
+ * Grupo de complementos de um produto. Uniao discriminada por `type` (igual ao
+ * bot): `unique` = escolha unica (radio), `check` = multipla (checkbox),
+ * `increase` = quantidade (steppers).
+ */
+export type ProductCustom =
+  | {
+      path: string; // chave de ligacao (customsPaths do produto aponta pra ca)
+      title: string;
+      type: "unique";
+      required: boolean; // precisa escolher uma
+      choices: ProductCustomChoice[];
+    }
+  | {
+      path: string;
+      title: string;
+      type: "check";
+      minChoices?: number;
+      maxChoices: number;
+      choices: ProductCustomChoice[];
+    }
+  | {
+      path: string;
+      title: string;
+      type: "increase";
+      minChoices?: number;
+      maxChoices: number;
+      /**
+       * Quantidade JA inclusa no preco do produto; o excedente cobra extraPrice.
+       * (Ex.: marmita ja vem com 1 carne; a 2a e extra.) Simplificacao fiel do
+       * comportamento de complemento-incluso do bot.
+       */
+      includedQuantity?: number;
+      choices: ProductCustomChoice[];
+    };
+
+export type Product = {
+  slug: string; // id do produto (usado como productId no Checkout)
+  categoryPath: string;
+  name: string;
+  description?: string;
+  price: number; // reais
+  customsPaths: string[]; // liga aos ProductCustom por `path`
+  active?: boolean;
+  /** Extensao do desafio: apelidos pra ajudar o matching por texto. */
+  aliases?: string[];
+};
+
+export type ProductCategory = {
+  slug: string;
+  name: string;
+  productsPaths: string[];
+  type: "normal";
+};
+
+export type Menu = {
+  storeId: string;
+  storeName: string;
+  categories: ProductCategory[];
+  products: Product[];
+  customs: ProductCustom[];
+};
 
 // ---- Conversa (input) ------------------------------------------------------
 
 export type Message = { from: "customer" | "store"; text: string };
 export type Conversation = { storeId: string; messages: Message[] };
 
-// ---- Saida do LLM: um RASCUNHO, ainda NAO confiavel ------------------------
-// Este e o formato que a interpretacao (LLM) deve produzir. Ele NAO tem preco
-// e NAO foi validado contra o menu — isso e trabalho do nucleo deterministico.
+// ---- Checkout (o pedido montado) -------------------------------------------
+// Espelha brendi-commons/types/precision/Checkout. Referencia produtos e
+// escolhas por id + quantidade, nao embute o objeto do produto. Sem preco por
+// item — o total fica em `totalPrice` (preenchido pelo priceCheckout).
 
-export type OrderDraftItem = {
-  /** Nome/alias do produto como o cliente pediu. */
-  ref: string;
+export type CheckoutChosen = {
+  choiceId: string;
+  quantity?: number;
+  /** So no `expected` dos testes: false = asserta AUSENCIA da escolha. */
+  shouldBeIncluded?: boolean;
+};
+
+export type CheckoutProduct = {
+  productId: string; // = Product.slug
   quantity: number;
-  /** Nomes de adicionais pedidos. */
-  addons?: string[];
-  /** Escolha de opcao/variacao paga (ex.: "M", "Coca"). */
-  choice?: string;
-  /**
-   * Escolhas do grupo JA INCLUSO (ex.: as carnes da marmita). O cliente pode
-   * pedir mais do que o incluso — o excedente vira extra pago na montagem.
-   * Ex.: ["bife", "frango"] numa marmita = 1 incluso + 1 extra.
-   */
-  includedPicks?: string[];
-  /** Remocoes ("sem cebola"). Nao afetam preco. */
-  removals?: string[];
+  chosen?: CheckoutChosen[];
+  notes?: string;
+  /** So no `expected` dos testes: false = asserta AUSENCIA do produto. */
+  shouldBeIncluded?: boolean;
 };
 
-export type OrderDraft = {
-  items: OrderDraftItem[];
-  /** Se o pedido esta ambiguo demais pra montar com seguranca. */
-  clarificationNeeded?: string;
+export type Checkout = {
+  products: CheckoutProduct[];
+  totalPrice?: number; // preenchido pela camada deterministica
+  orderFinished?: boolean;
 };
 
-// ---- Pedido validado e precificado (output) --------------------------------
+// ---- Resultados dos dois estagios ------------------------------------------
 
-export type OrderItem = {
-  productId: string;
-  name: string;
-  quantity: number;
-  addons: MenuOption[];
-  removals: string[];
-  /** Preco unitario ja com adicionais/opcoes. Vem SEMPRE do menu. */
-  unitPriceCents: Money;
-  lineTotalCents: Money;
+/** Saida do selectProducts (LLM): uma selecao ainda NAO validada nem precificada. */
+export type SelectProductsResult = {
+  checkout: Checkout;
+  /** Se ambiguo demais pra montar com seguranca (ex.: 2 produtos batem). */
+  clarification?: string;
 };
 
-export type Order = {
-  storeId: string;
-  items: OrderItem[];
-  totalCents: Money;
-};
-
-export type AssembleResult =
-  | { ok: true; order: Order }
+/** Saida do priceCheckout (deterministico): pedido validado e precificado, ou recusa. */
+export type PriceResult =
+  | { ok: true; checkout: Checkout }
   | { ok: false; reason: string; clarification?: string };

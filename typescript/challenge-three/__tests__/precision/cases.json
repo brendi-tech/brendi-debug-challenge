@@ -1,0 +1,52 @@
+[
+  {
+    "useCase": "simples",
+    "messages": [{ "from": "customer", "text": "oi, quero um x-salada" }],
+    "expectedCheckout": { "products": [{ "productId": "x-salada", "quantity": 1 }], "totalPrice": 22 }
+  },
+  {
+    "useCase": "quantidade",
+    "messages": [{ "from": "customer", "text": "me vê 2 x-tudo por favor" }],
+    "expectedCheckout": { "products": [{ "productId": "x-tudo", "quantity": 2 }], "totalPrice": 64 }
+  },
+  {
+    "useCase": "adicionais + remoção",
+    "messages": [{ "from": "customer", "text": "um x-salada com bacon e ovo, mas sem cebola" }],
+    "expectedCheckout": {
+      "products": [{ "productId": "x-salada", "quantity": 1, "chosen": [{ "choiceId": "bacon" }, { "choiceId": "ovo" }] }],
+      "totalPrice": 28.5
+    }
+  },
+  {
+    "useCase": "ambiguidade (não alucinar)",
+    "messages": [{ "from": "customer", "text": "queria aquele hambúrguer com bacon" }],
+    "expectClarification": true
+  },
+  {
+    "useCase": "incluso vs extra (marmita)",
+    "messages": [{ "from": "customer", "text": "quero uma marmita com bife e frango" }],
+    "expectedCheckout": {
+      "products": [{ "productId": "marmita", "quantity": 1, "chosen": [{ "choiceId": "bife" }, { "choiceId": "frango" }] }],
+      "totalPrice": 37
+    }
+  },
+  {
+    "useCase": "mudança de ideia",
+    "messages": [
+      { "from": "customer", "text": "quero um x-bacon" },
+      { "from": "customer", "text": "ah não, deixa um x-salada mesmo" }
+    ],
+    "expectedCheckout": { "products": [{ "productId": "x-salada", "quantity": 1 }], "totalPrice": 22 }
+  },
+  {
+    "useCase": "escolha obrigatória + 2 produtos",
+    "messages": [{ "from": "customer", "text": "uma batata grande e uma coca" }],
+    "expectedCheckout": {
+      "products": [
+        { "productId": "batata", "quantity": 1, "chosen": [{ "choiceId": "g" }] },
+        { "productId": "refri", "quantity": 1, "chosen": [{ "choiceId": "coca" }] }
+      ],
+      "totalPrice": 31
+    }
+  }
+]

@@ -5,7 +5,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "eval": "ts-node eval/run.ts"
+    "precision": "ts-node __tests__/precision/run.ts"
   },
   "dependencies": {
     "openai": "^4.67.0"

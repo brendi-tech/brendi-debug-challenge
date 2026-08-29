@@ -51,15 +51,16 @@ class OpenAILLM implements LLM {
   }
 }
 
-// Mock ingênuo: casa por palavra-chave. NÃO é o alvo — é só andaime offline.
+// Mock ingênuo: casa por palavra-chave e devolve um Checkout cru (sem preço).
+// NÃO é o alvo — é só andaime offline pra o harness rodar sem chave.
 class MockLLM implements LLM {
   async chat(opts: ChatOptions): Promise<string> {
     const t = opts.user.toLowerCase();
-    const items: any[] = [];
-    if (t.includes("x-tudo") || t.includes("x tudo")) items.push({ ref: "x-tudo", quantity: 1 });
-    if (t.includes("x-salada") || t.includes("x salada")) items.push({ ref: "x-salada", quantity: 1 });
-    if (items.length === 0) items.push({ ref: "x-salada", quantity: 1 });
-    return JSON.stringify({ items });
+    const products: any[] = [];
+    if (t.includes("x-tudo") || t.includes("x tudo")) products.push({ productId: "x-tudo", quantity: 1 });
+    if (t.includes("x-salada") || t.includes("x salada")) products.push({ productId: "x-salada", quantity: 1 });
+    if (products.length === 0) products.push({ productId: "x-salada", quantity: 1 });
+    return JSON.stringify({ products });
   }
 }
 
