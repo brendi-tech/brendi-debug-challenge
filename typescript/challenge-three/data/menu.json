@@ -1,0 +1,99 @@
+{
+  "storeId": "brenda-burger-sjc",
+  "storeName": "Brenda Burger",
+  "items": [
+    {
+      "id": "x-salada",
+      "name": "X-Salada",
+      "aliases": ["xis salada", "x salada", "hambúrguer com salada"],
+      "priceCents": 2200,
+      "available": true,
+      "addons": [
+        { "id": "bacon", "name": "Bacon", "priceCents": 400 },
+        { "id": "ovo", "name": "Ovo", "priceCents": 250 },
+        { "id": "cheddar-extra", "name": "Cheddar extra", "priceCents": 350 }
+      ]
+    },
+    {
+      "id": "x-bacon",
+      "name": "X-Bacon",
+      "aliases": ["xis bacon", "x bacon"],
+      "priceCents": 2600,
+      "available": true,
+      "addons": [
+        { "id": "ovo", "name": "Ovo", "priceCents": 250 },
+        { "id": "cheddar-extra", "name": "Cheddar extra", "priceCents": 350 }
+      ]
+    },
+    {
+      "id": "x-tudo",
+      "name": "X-Tudo",
+      "aliases": ["xis tudo", "x tudo", "completo"],
+      "priceCents": 3200,
+      "available": true,
+      "addons": [{ "id": "bacon", "name": "Bacon", "priceCents": 400 }]
+    },
+    {
+      "id": "batata",
+      "name": "Batata Frita",
+      "aliases": ["fritas", "batatinha"],
+      "priceCents": 1500,
+      "available": true,
+      "options": {
+        "group": "tamanho",
+        "choices": [
+          { "id": "p", "name": "P", "priceCents": 0 },
+          { "id": "m", "name": "M", "priceCents": 500 },
+          { "id": "g", "name": "G", "priceCents": 900 }
+        ]
+      }
+    },
+    {
+      "id": "refri",
+      "name": "Refrigerante",
+      "aliases": ["refri", "bebida", "coca", "guaraná"],
+      "priceCents": 700,
+      "available": true,
+      "options": {
+        "group": "sabor",
+        "choices": [
+          { "id": "coca", "name": "Coca-Cola", "priceCents": 0 },
+          { "id": "guarana", "name": "Guaraná", "priceCents": 0 }
+        ]
+      }
+    },
+    {
+      "id": "marmita",
+      "name": "Marmita",
+      "aliases": ["quentinha", "prato feito", "pf"],
+      "priceCents": 2800,
+      "available": true,
+      "includedChoice": {
+        "group": "carne",
+        "includedQty": 1,
+        "extraPriceCents": 900,
+        "choices": [
+          { "id": "frango", "name": "Frango" },
+          { "id": "bife", "name": "Bife" },
+          { "id": "linguica", "name": "Linguiça" }
+        ]
+      }
+    },
+    {
+      "id": "combo-x-salada",
+      "name": "Combo X-Salada",
+      "aliases": ["combo x salada", "combo salada"],
+      "priceCents": 3500,
+      "available": true,
+      "isCombo": true,
+      "comboItems": ["x-salada", "batata", "refri"]
+    },
+    {
+      "id": "milkshake",
+      "name": "Milkshake",
+      "aliases": ["shake"],
+      "priceCents": 1800,
+      "available": false
+    }
+  ]
+}
