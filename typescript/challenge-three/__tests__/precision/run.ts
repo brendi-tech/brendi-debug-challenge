@@ -9,6 +9,7 @@
 // É uma NOTA, não pass/fail binário. O objetivo é maximizar a precisão.
 // ============================================================================
 
+import "dotenv/config";
 import { loadMenu } from "../../src/menu";
 import { createLLM } from "../../src/llm";
 import { handleConversation } from "../../src/handleConversation";
