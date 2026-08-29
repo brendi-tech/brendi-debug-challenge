@@ -8,6 +8,7 @@
     "precision": "ts-node __tests__/precision/run.ts"
   },
   "dependencies": {
+    "dotenv": "^16.4.5",
     "openai": "^4.67.0"
   },
   "devDependencies": {
