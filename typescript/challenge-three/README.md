@@ -10,80 +10,65 @@ pra milhares de restaurantes. O coração disso é pegar uma conversa em linguag
 natural, cruzar com o cardápio da loja e produzir um **pedido correto** — de
 forma **confiável**, apesar de a LLM ser probabilística.
 
-Este desafio é uma versão mínima e honesta desse problema. Os tipos e o formato
-espelham o nosso código real: um `Menu` de listas planas (`products` /
-`customs`), um `Checkout` como pedido montado, e testes de precisão que comparam
-o `Checkout` produzido com um `expectedCheckout`.
+Este desafio é uma versão mínima e honesta desse problema. Os tipos espelham o
+nosso código real: um `Menu` de listas planas (`products` / `customs`) e um
+`Checkout` como pedido montado.
 
 ## A missão
 
-O pipeline tem **duas camadas** de propósito — e a divisão é justamente o
-desafio:
+Implemente **uma** função:
 
-1. **`selectProducts`** (`src/selectProducts.ts`) — a **única** parte que fala com
-   a LLM. Lê a conversa + o menu e produz uma **seleção** estruturada (um
-   `Checkout` sem preço). Probabilístico.
-2. **`priceCheckout`** (`src/priceCheckout.ts`) — **determinístico**, sem LLM.
-   Valida a seleção contra o menu (produto existe/ativo, escolha pertence ao
-   produto, obrigatórios, min/max) e **precifica** (preço sempre do menu). É aqui
-   que mora a confiabilidade.
+```ts
+handleConversation(conversation, menu, llm): Promise<Result>
+```
 
-Os stubs estão marcados com `TODO`. **Implemente os dois.**
+Ela recebe a conversa e o cardápio e devolve o pedido montado (um `Checkout` com
+`totalPrice`), ou uma recusa quando for inválido / ambíguo. **Como você organiza
+o pipeline por dentro é decisão sua** — o que delega pra LLM, o que garante em
+código, como valida e precifica. O stub está em `src/handleConversation.ts`.
+
+Não tem roteiro: **os testes são a especificação.** Faça-os passar e maximize a
+precisão.
 
 ## Como rodar
 
 ```bash
 npm install
-npm test              # testes deterministicos do priceCheckout — faça passar (TDD)
-npm run precision     # mede a precisão do selectProducts nos casos reais
+npm test              # comportamento esperado (LLM controlada) — faça passar
+npm run precision     # qualidade da interpretação com a LLM real
 ```
 
-- `npm test` **não usa LLM** e deve ficar 100% verde. É seu contrato de
-  confiabilidade (guardrails + precificação, incluindo o caso incluso-vs-extra da
-  marmita).
-- `npm run precision` roda a LLM de verdade (precisa de `OPENAI_API_KEY` — peça a
-  chave ao entrevistador e copie `.env.example` para `.env`). Compara o
-  `Checkout` produzido com o `expectedCheckout` de cada caso via
-  `compareCheckout` (asserção **esparsa**: só checa os campos presentes no
-  esperado). É uma **nota**, não pass/fail — maximize a precisão. Use `-- --mock`
-  só pra ver o harness de pé sem chave.
-
-## Estrutura
-
-```
-src/
-  types.ts             contratos: Menu/Product/ProductCustom, Checkout
-  menu.ts              loader do cardapio (fornecido)
-  llm.ts               wrapper de LLM: real + mock offline (fornecido)
-  selectProducts.ts    LLM: conversa -> Checkout (TODO)
-  priceCheckout.ts     deterministico: valida + precifica (TODO)
-  compareCheckout.ts   comparador esparso de precisao (fornecido)
-  handleConversation.ts orquestrador (fornecido)
-data/menu.json         cardapio da loja de teste
-__tests__/
-  priceCheckout.ut.test.ts   testes deterministicos (o alvo do TDD)
-  precision/                 casos (conversa -> expectedCheckout) + runner
-```
+- `npm test` roda com uma **LLM de teste** (`makeFakeLLM`) que devolve uma seleção
+  fixa, então é determinístico. Cobre o que seu pipeline deve aceitar, recusar e
+  precificar — incluindo o caso incluso-vs-extra da marmita.
+- `npm run precision` usa a LLM de verdade (precisa de `OPENAI_API_KEY` — peça a
+  chave ao entrevistador, copie `.env.example` para `.env`). Roda conversas reais
+  e compara o `Checkout` produzido com o esperado. É uma **nota**, não pass/fail —
+  o objetivo é maximizar a precisão. `-- --mock` roda sem chave só pra ver de pé.
 
 ## O que a gente valoriza (seja pleno)
 
-- **Como você torna o probabilístico confiável** — LLM devolve seleção
-  estruturada; validação e preço ficam no determinístico; nada de confiar em
-  produto/preço vindo da LLM.
+- **Como você torna o probabilístico confiável.** LLM erra; o pedido não pode
+  sair errado. Pense onde entra código determinístico.
 - **Tratar os casos que doem**, não só o happy-path: ambiguidade (pedir
-  clarificação em vez de chutar), **incluso vs extra** (marmita), mudança de
-  ideia, escolha obrigatória.
+  clarificação em vez de chutar), incluso vs extra, escolha obrigatória, mudança
+  de ideia.
 - **Cabeça de escala:** latência, custo (modelo, menos chamadas, cache) e como
   você **mediria precisão** em produção.
 
+## O que já vem pronto
+
+`src/types.ts` (contratos), `src/menu.ts` (loader), `src/llm.ts` (wrapper da LLM +
+`makeFakeLLM`), `data/menu.json` (cardápio), e o harness de `npm test` /
+`npm run precision`. O resto é com você.
+
 ## Entrega
 
-- Os `TODO` implementados, `npm test` verde.
+- `handleConversation` implementado, `npm test` verde.
 - Um **`SOLUTION.md`** curto: decisões, tradeoffs, e uma seção **"em escala"** — o
   que você faria com mais tempo / mais volume pra mover precisão, latência, custo.
 
-**Time-box sugerido: 3–4h.** Foco e julgamento valem mais que volume; se cortar
-escopo, diga no `SOLUTION.md` o que e por quê.
+**Time-box sugerido: 3–4h.** Foco e julgamento valem mais que volume.
 
 **IA liberada.** Use os agentes de código do seu dia a dia. Só saiba defender e
-estender o que entregou: na conversa depois, a gente mexe no seu código junto.
+estender o que entregou — na conversa depois, a gente mexe no seu código junto.

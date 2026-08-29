@@ -4,66 +4,60 @@
 
 Testa o que define **pleno** pra gente: desenhar um pipeline LLM **confiável e
 testável** e pensar em **precisão / latência / custo em escala** — não só "sabe
-codar". Os tipos e o formato espelham o código real (Menu de listas planas,
-`ProductCustom` união por type, `Checkout`, `compareCheckout` esparso).
+codar". De propósito, o desafio é **aberto**: uma função (`handleConversation`),
+os contratos (tipos) e os testes como spec. A **estrutura é dele** — e é aí que o
+pleno aparece.
 
-## O sinal central (a tensão de propósito)
+## O sinal central (o que ele tem que descobrir sozinho)
 
-TDD + LLM se contradizem: LLM é não-determinística, assert de igualdade fica
-flaky. **Quem é pleno resolve separando as camadas** — a LLM (`selectProducts`)
-devolve uma **seleção estruturada**, e a lógica que precisa de garantia mora no
-`priceCheckout` (determinístico, testável).
+TDD + LLM se contradizem: LLM é não-determinística. **Quem é pleno chega sozinho**
+na separação: a LLM só interpreta (produz uma seleção estruturada) e a lógica que
+precisa de garantia (validar produto/escolha, preço, incluso-vs-extra) fica em
+código determinístico. Ninguém disse isso pra ele no enunciado.
 
-- 🟢 `selectProducts` produz um `Checkout` estruturado; `priceCheckout` valida e
-  precifica; `npm test` verde; preço sempre do menu.
-- 🔴 Regra de negócio dentro do prompt; preço vindo da LLM; testes frágeis;
-  guardrails ausentes (aceita produto fora do menu / inativo / escolha inválida).
+- 🟢 Separou interpretação de validação/precificação; preço sempre do menu; `npm
+  test` verde; código organizado sem a gente ter mandado.
+- 🔴 Jogou regra de negócio no prompt; confiou em preço/produto vindo da LLM;
+  tudo numa função só e frágil; guardrails ausentes.
 
 ## Rubrica (mapeada na régua de pleno)
 
 | Dimensão | 🟢 forte | 🔴 fraco |
 |---|---|---|
-| **Confiabilidade / testabilidade** | camadas separadas, `npm test` verde, guardrails sólidos | regra no prompt, testes flaky, sem guardrail |
+| **Arquitetura / testabilidade** | achou a separação sozinho; determinístico isolado e testável | monólito frágil; regra no prompt |
 | **LLM engineering** | saída estruturada, sinaliza ambiguidade, trata falha | chuta no ambíguo, alucina produto/preço |
-| **Domínio (casos que doem)** | acerta incluso-vs-extra (marmita), obrigatórios, mudança de ideia | só happy-path |
+| **Domínio (casos que doem)** | acerta incluso-vs-extra, obrigatórios, mudança de ideia | só happy-path |
 | **Cabeça de escala** | fala de latência/custo/modelo/cache + como medir precisão | não menciona |
 | **Código + julgamento** | limpo, tipado, `SOLUTION.md` com tradeoffs e "em escala" | decisões não-explicadas |
 
-O `SOLUTION.md` (a seção "em escala") é onde o pleno aparece. Júnior implementa;
-pleno implementa **e** raciocina sobre escalar.
+O `SOLUTION.md` (a seção "em escala") é onde o pleno aparece. Repare também em
+**como ele estruturou o `src/`** — isso é escolha dele, não nossa.
 
 ## Casos plantados (o que cada um testa)
 
-- **incluso vs extra (marmita):** o separador. `priceCheckout` deve cobrar 1
-  carne extra, não virar 2 marmitas (custom `carne-marmita`, `includedQuantity: 1`).
-- **ambiguidade ("hambúrguer com bacon"):** deve pedir clarificação, **não**
-  alucinar (X-Bacon vs X-Salada+bacon). Guardrail contra "mil pizzas por R$0".
+- **incluso vs extra (marmita):** o separador. Cobrar 1 carne extra, não virar 2
+  marmitas (custom `carne-marmita`, `includedQuantity: 1`).
+- **ambiguidade ("hambúrguer com bacon"):** pedir clarificação, não alucinar
+  (X-Bacon vs X-Salada+bacon). Guardrail contra "mil pizzas por R$0".
 - **obrigatório + 2 produtos, mudança de ideia, adicionais:** realidade da conversa.
 
-## Live coding = estender o PRÓPRIO take-home (não função solta)
+## Live coding = estender o PRÓPRIO take-home
 
-Junta o walkthrough com o live numa sessão. Ele apresenta (5–10 min), você
-entende o design, e aí **dropa um requisito novo, sem avisar**:
+Junta o walkthrough com o live numa sessão. Ele apresenta (5–10 min), você entende
+o design, e aí **dropa um requisito novo, sem avisar**:
 
-- *"O cliente pede 'combo x-salada'. Faz o selectProducts casar o produto combo."*
-  (`combo-x-salada` já existe no menu)
-- *"Milkshake ficou indisponível — garante que a Brenda não oferece."* (o produto
-  já está `active: false`; onde ele checa isso?)
-- *"Adiciona um guardrail: pedido acima de R$500 ou 20 itens precisa de confirmação."*
+- *"O cliente pede 'combo x-salada'. Faz casar o produto combo."* (`combo-x-salada`
+  já existe no menu)
+- *"Milkshake ficou indisponível — garante que a Brenda não oferece."* (já está
+  `active: false`; onde ele checa?)
+- *"Pedido acima de R$500 ou 20 itens precisa de confirmação — adiciona o guardrail."*
 - *"Chegou um follow-up: 'na verdade tira a cebola'. Trata a edição."* (estado da conversa)
-- *"O adicional 'bacon' passou a ter limite de 2 por lanche. Faz valer."* (mexe no
-  `check` maxChoices no `priceCheckout`)
+- *"O adicional 'bacon' passou a ter limite de 2 por lanche."* (mexe no `check`)
 
 **Por que estender o próprio código:** prova que a entrega é dele (se AI-gerou
-tudo, trava no próprio repo), testa design de base, execução ao vivo e domínio.
+tudo, trava no próprio repo), testa o design de base, execução ao vivo e domínio.
+Se o `src/` está bem estruturado, a extensão encaixa limpa; se é monólito, ele
+remenda — e isso é sinal.
 
-**IA no live:** liberada (é o job). Observe **como** ele usa — dirige com
-julgamento e revisa, ou cola cego? Pra sinal cru de fundamento, peça pra ele
-explicar uma parte **sem** o agente.
-
-## O que observar no live
-
-- Extendeu **limpo** (bom design de base) ou **remendou**?
-- Raciocinou o tradeoff **antes** de codar?
-- Achou o lugar certo no **próprio** código rápido (= é dele)?
-- Pensou em **não quebrar o que já passava** (mentalidade de escala)?
+**IA no live:** liberada (é o job). Observe **como** ele usa. Pra sinal cru de
+fundamento, peça pra explicar uma parte **sem** o agente.

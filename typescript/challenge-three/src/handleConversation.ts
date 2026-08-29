@@ -1,17 +1,23 @@
-// Orquestrador — FORNECIDO. Encadeia interpretacao (probabilistica) + montagem
-// (deterministica). Nao precisa mexer.
-
-import type { Conversation, Menu, PriceResult } from "./types";
+import type { Conversation, Menu, Result } from "./types";
 import type { LLM } from "./llm";
-import { selectProducts } from "./selectProducts";
-import { priceCheckout } from "./priceCheckout";
 
+/**
+ * O coração do desafio — implemente você, do seu jeito.
+ *
+ * Recebe a conversa e o cardápio, e devolve o pedido montado (um `Checkout` com
+ * `totalPrice`) — ou uma recusa quando o pedido é inválido / ambíguo demais.
+ *
+ * `llm.chat(...)` te dá acesso à LLM (devolve texto). Como você organiza o
+ * pipeline por dentro (o que delega pra LLM, o que você garante em código, como
+ * valida e precifica) é decisão sua. Os testes definem o comportamento esperado:
+ *
+ *   npm test            -> comportamento determinístico (LLM controlada)
+ *   npm run precision    -> qualidade da interpretação com a LLM real
+ */
 export async function handleConversation(
-  conversation: Conversation,
-  menu: Menu,
-  llm: LLM
-): Promise<PriceResult> {
-  const { checkout, clarification } = await selectProducts(conversation, menu, llm);
-  if (clarification) return { ok: false, reason: "clarification", clarification };
-  return priceCheckout(menu, checkout);
+  _conversation: Conversation,
+  _menu: Menu,
+  _llm: LLM
+): Promise<Result> {
+  throw new Error("TODO: implementar handleConversation");
 }

@@ -67,3 +67,13 @@ class MockLLM implements LLM {
 export function createLLM(opts?: { mock?: boolean }): LLM {
   return opts?.mock ? new MockLLM() : new OpenAILLM();
 }
+
+/**
+ * LLM de teste: ignora o prompt e sempre devolve `output` (JSON). Útil pra
+ * testar o comportamento determinístico do seu pipeline sem depender da LLM real.
+ * O `output` é o que o seu código vai receber de `llm.chat(...)` e parsear.
+ */
+export function makeFakeLLM(output: unknown): LLM {
+  const s = typeof output === "string" ? output : JSON.stringify(output);
+  return { chat: async () => s };
+}

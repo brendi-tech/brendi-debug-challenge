@@ -115,16 +115,12 @@ export type Checkout = {
   orderFinished?: boolean;
 };
 
-// ---- Resultados dos dois estagios ------------------------------------------
+// ---- Resultado ------------------------------------------------------------
 
-/** Saida do selectProducts (LLM): uma selecao ainda NAO validada nem precificada. */
-export type SelectProductsResult = {
-  checkout: Checkout;
-  /** Se ambiguo demais pra montar com seguranca (ex.: 2 produtos batem). */
-  clarification?: string;
-};
-
-/** Saida do priceCheckout (deterministico): pedido validado e precificado, ou recusa. */
-export type PriceResult =
+/**
+ * O que o pipeline devolve: o pedido montado (Checkout com totalPrice), ou uma
+ * recusa. Use `clarification` quando a conversa for ambigua demais pra montar.
+ */
+export type Result =
   | { ok: true; checkout: Checkout }
-  | { ok: false; reason: string; clarification?: string };
+  | { ok: false; clarification?: string; reason?: string };
