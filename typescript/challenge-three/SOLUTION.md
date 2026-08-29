@@ -30,6 +30,12 @@ só a qualidade da `interpret`.
   cobra `extraPrice` (marmita com 2 carnes = 1 inclusa + 1 extra).
 - **Menu compacto no prompt:** mando só `productId/name/aliases + choices`, não o
   cardápio inteiro, pra cortar tokens.
+- **Observabilidade da call:** cada chamada loga tokens + latência (`[llm]`), e o
+  modelo devolve um `reasoning` de 1 frase que eu logo (`[interpret]`) — tudo em
+  stderr pra não sujar o pedido no stdout. É o mínimo pra debugar *por que* um
+  pedido saiu como saiu e pra rastrear custo/latência por call. O `reasoning` vem
+  primeiro no JSON, então funciona como um chain-of-thought curto que ainda ajuda
+  a decisão.
 
 ## Em escala (o que eu faria com mais tempo / volume)
 

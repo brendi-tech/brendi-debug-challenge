@@ -29,7 +29,7 @@ function menuForPrompt(menu: Menu) {
 
 const SYSTEM = `Você monta pedidos a partir de uma conversa de WhatsApp, usando SÓ o cardápio dado.
 Devolva SOMENTE JSON:
-{ "products": [ { "productId": "<id do cardápio>", "quantity": <inteiro>, "chosen": [ { "choiceId": "<id do cardápio>", "quantity": <inteiro, opcional> } ] } ], "clarification": "<pergunta curta, só se ambíguo>" }
+{ "reasoning": "<1 frase: por que esses itens, ou por que clarificar>", "products": [ { "productId": "<id do cardápio>", "quantity": <inteiro>, "chosen": [ { "choiceId": "<id do cardápio>", "quantity": <inteiro, opcional> } ] } ], "clarification": "<pergunta curta, só se ambíguo>" }
 Regras:
 - Use apenas productId/choiceId que existem no cardápio. NUNCA invente produto, opção ou preço.
 - Se o cliente for ambíguo (dois produtos batem igual), deixe "products" vazio e escreva "clarification".
@@ -52,6 +52,10 @@ export async function interpret(
     parsed = JSON.parse(raw);
   } catch {
     return { checkout: { products: [] }, clarification: "Não consegui entender o pedido." };
+  }
+  // chain-of-thought em stderr: o "porquê" da decisão, sem afetar o pedido
+  if (typeof parsed.reasoning === "string" && parsed.reasoning.trim()) {
+    console.error(`[interpret] reasoning=${JSON.stringify(parsed.reasoning.trim())}`);
   }
   return {
     checkout: { products: Array.isArray(parsed.products) ? parsed.products : [] },

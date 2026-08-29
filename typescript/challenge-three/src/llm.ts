@@ -38,6 +38,7 @@ class OpenAILLM implements LLM {
     this.model = process.env.BRENDA_MODEL || "gpt-4o-mini";
   }
   async chat(opts: ChatOptions): Promise<string> {
+    const t0 = Date.now();
     const res = await this.client.chat.completions.create({
       model: this.model,
       temperature: opts.temperature ?? 0,
@@ -47,6 +48,11 @@ class OpenAILLM implements LLM {
       ],
       ...(opts.jsonSchemaHint ? { response_format: { type: "json_object" } } : {}),
     });
+    const u = res.usage ?? {};
+    // stderr pra não sujar o stdout (onde sai o JSON do pedido)
+    console.error(
+      `[llm] model=${this.model} prompt=${u.prompt_tokens ?? "?"} completion=${u.completion_tokens ?? "?"} total=${u.total_tokens ?? "?"} ms=${Date.now() - t0}`
+    );
     return res.choices[0]?.message?.content ?? "";
   }
 }
