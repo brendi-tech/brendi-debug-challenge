@@ -4,6 +4,7 @@
 
 import type { Checkout, Conversation, Menu } from "../types";
 import type { LLM } from "../llm";
+import { logLLM } from "./observability";
 
 export type Interpretation = { checkout: Checkout; clarification?: string };
 
@@ -53,9 +54,9 @@ export async function interpret(
   } catch {
     return { checkout: { products: [] }, clarification: "Não consegui entender o pedido." };
   }
-  // chain-of-thought em stderr: o "porquê" da decisão, sem afetar o pedido
+  // chain-of-thought: o "porquê" da decisão, sem afetar o pedido
   if (typeof parsed.reasoning === "string" && parsed.reasoning.trim()) {
-    console.error(`[interpret] reasoning=${JSON.stringify(parsed.reasoning.trim())}`);
+    logLLM("interpret", { reasoning: parsed.reasoning.trim() });
   }
   return {
     checkout: { products: Array.isArray(parsed.products) ? parsed.products : [] },

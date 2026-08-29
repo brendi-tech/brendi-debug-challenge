@@ -10,6 +10,8 @@
 // de verdade.
 // ============================================================================
 
+import { logLLM } from "./lib/observability";
+
 export type ChatOptions = {
   system: string;
   user: string;
@@ -49,10 +51,13 @@ class OpenAILLM implements LLM {
       ...(opts.jsonSchemaHint ? { response_format: { type: "json_object" } } : {}),
     });
     const u = res.usage ?? {};
-    // stderr pra não sujar o stdout (onde sai o JSON do pedido)
-    console.error(
-      `[llm] model=${this.model} prompt=${u.prompt_tokens ?? "?"} completion=${u.completion_tokens ?? "?"} total=${u.total_tokens ?? "?"} ms=${Date.now() - t0}`
-    );
+    logLLM("llm", {
+      model: this.model,
+      prompt_tokens: u.prompt_tokens,
+      completion_tokens: u.completion_tokens,
+      total_tokens: u.total_tokens,
+      ms: Date.now() - t0,
+    });
     return res.choices[0]?.message?.content ?? "";
   }
 }
