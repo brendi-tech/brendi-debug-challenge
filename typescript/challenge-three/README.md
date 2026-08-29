@@ -58,7 +58,8 @@ npm run precision     # qualidade da interpretação com a LLM real
 - **Observabilidade das chamadas de LLM.** A gente vive de debugar precisão em
   produção. Instrumente suas chamadas pra dar visibilidade do que entrou e do que
   o modelo decidiu — o suficiente pra entender *por que* um pedido saiu como saiu.
-  Deixe isso aparecendo quando roda.
+  Deixe aparecendo quando roda **e persista esse rastro num arquivo separado** (não
+  só no console), pra dar pra investigar uma call depois.
 
 ## O que já vem pronto
 
