@@ -1,23 +1,23 @@
+// SOLUÇÃO DE REFERÊNCIA.
+//
+// A decisão de design central: separar o probabilístico do determinístico.
+//   - interpret  -> só a LLM. Traduz a conversa numa seleção estruturada (ids).
+//   - priceCheckout -> sem LLM. Valida contra o menu e precifica. Confiável e
+//     testável de forma binária.
+// Assim os testes conseguem ser determinísticos (controlando/injetando a LLM) e
+// a parte que "não pode sair errado" nunca depende do modelo.
+
 import type { Conversation, Menu, Result } from "./types";
 import type { LLM } from "./llm";
+import { interpret } from "./lib/interpret";
+import { priceCheckout } from "./lib/priceCheckout";
 
-/**
- * O coração do desafio — implemente você, do seu jeito.
- *
- * Recebe a conversa e o cardápio, e devolve o pedido montado (um `Checkout` com
- * `totalPrice`) — ou uma recusa quando o pedido é inválido / ambíguo demais.
- *
- * `llm.chat(...)` te dá acesso à LLM (devolve texto). Como você organiza o
- * pipeline por dentro (o que delega pra LLM, o que você garante em código, como
- * valida e precifica) é decisão sua. Os testes definem o comportamento esperado:
- *
- *   npm test            -> comportamento determinístico (LLM controlada)
- *   npm run precision    -> qualidade da interpretação com a LLM real
- */
 export async function handleConversation(
-  _conversation: Conversation,
-  _menu: Menu,
-  _llm: LLM
+  conversation: Conversation,
+  menu: Menu,
+  llm: LLM
 ): Promise<Result> {
-  throw new Error("TODO: implementar handleConversation");
+  const { checkout, clarification } = await interpret(conversation, menu, llm);
+  if (clarification) return { ok: false, clarification };
+  return priceCheckout(menu, checkout);
 }
