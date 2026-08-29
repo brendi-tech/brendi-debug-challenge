@@ -20,6 +20,8 @@ function menuForPrompt(menu: Menu) {
         .map((c) => ({
           title: c.title,
           type: c.type,
+          min: c.type === "unique" ? (c.required ? 1 : 0) : c.minChoices,
+          max: c.type === "unique" ? 1 : c.maxChoices,
           choices: c.choices.map((ch) => ({ choiceId: ch.id, title: ch.title })),
         })),
     }));
@@ -32,6 +34,7 @@ Regras:
 - Use apenas productId/choiceId que existem no cardápio. NUNCA invente produto, opção ou preço.
 - Se o cliente for ambíguo (dois produtos batem igual), deixe "products" vazio e escreva "clarification".
 - Complementos já inclusos (ex.: as carnes de uma marmita) também vão em "chosen".
+- Um complemento pode aceitar VÁRIAS opções (veja "min"/"max"). Se o cliente citar mais de uma opção válida do mesmo grupo (ex.: "bife e frango"), inclua TODAS — não peça pra escolher uma.
 - Considere a conversa inteira (o cliente pode mudar de ideia).`;
 
 export async function interpret(
