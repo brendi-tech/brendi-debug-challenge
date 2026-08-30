@@ -12,7 +12,7 @@ const menu = loadMenu();
 // Real precisa de OPENAI_API_KEY; sem chave cai no mock (o server sobe do mesmo jeito).
 const llm = createLLM({ mock: !process.env.OPENAI_API_KEY });
 
-app.get("/health", (_req, res) => {
+app.get("/", (_req, res) => {
   res.json({ ok: true });
 });
 

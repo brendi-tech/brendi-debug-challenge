@@ -33,7 +33,7 @@ bate nela, como na Brenda real:
 
 | Rota | O quê |
 |---|---|
-| `GET /health` | vem pronto |
+| `GET /` | vem pronto — responde `{ ok: true }` quando o server sobe |
 | `POST /orders` | body `{ messages }` → devolve o `Result` (vem ligado ao `handleConversation`) |
 | `POST /owner/notify` | **você cria** — recebe a escalação pro dono |
 
@@ -82,8 +82,13 @@ npm run test:api      # NOUTRO terminal, com o server no ar: bate nos endpoints 
 
 `src/types.ts` (contratos), `src/menu.ts` (loader), `src/llm.ts` (wrapper da LLM +
 `makeFakeLLM`), `data/menu.json` (cardápio), a **API** `src/app.ts` (Express, com
-`/health` + `/orders` já ligados), e os harnesses `npm test` (in-process) e
+`/` + `/orders` já ligados), e os harnesses `npm test` (in-process) e
 `npm run test:api` (bate no server). O resto é com você.
+
+**Não mexa** (têm um aviso no topo): `test_endpoints.ts`, `cases.json`,
+`__tests__/behaviour.test.ts`, `src/menu.ts`, `src/compareCheckout.ts` — é o que te
+valida. Seu território: `src/handleConversation.ts` (implemente), `src/app.ts`
+(estenda) e o que mais você criar.
 
 ## Entrega
 

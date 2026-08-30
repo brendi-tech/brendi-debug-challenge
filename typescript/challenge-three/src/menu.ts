@@ -1,3 +1,5 @@
+// NÃO MEXER — utilitário fornecido (loader do cardápio).
+
 import { readFileSync } from "fs";
 import { join } from "path";
 import type { Menu } from "./types";

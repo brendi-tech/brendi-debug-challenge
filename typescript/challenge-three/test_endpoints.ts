@@ -1,8 +1,11 @@
-// Harness end-to-end: sobe o server (npm start) e roda ISSO (npm run test:api).
-// Bate nos endpoints por HTTP, igual a gente valida a Brenda de verdade.
-//   GET  /health
-//   POST /owner/notify   (o endpoint que recebe a escalação)
-//   POST /orders         (monta o pedido a partir da conversa)
+// NÃO MEXER — harness que valida sua API (rode com o server no ar). Edite e você
+// está trapaceando no próprio teste.
+//
+// Sobe o server (npm start) e roda ISSO (npm run test:api). Bate nos endpoints por
+// HTTP, igual a gente valida a Brenda de verdade:
+//   GET  /                (server no ar)
+//   POST /owner/notify    (o endpoint que recebe a escalação)
+//   POST /orders          (monta o pedido a partir da conversa)
 // A precisão de /orders é uma NOTA (LLM real); o resto é pass/fail.
 
 import "dotenv/config";
@@ -47,7 +50,7 @@ function request(method: string, path: string, body?: unknown): Promise<{ status
 }
 
 async function main() {
-  const up = await request("GET", "/health");
+  const up = await request("GET", "/");
   if (up.error) {
     console.log(`${R}Servidor inacessível em ${BASE}. Rode 'npm start' antes.${X}\n${up.error}`);
     process.exit(1);
@@ -60,7 +63,7 @@ async function main() {
   };
 
   console.log(`\n${B}Endpoints${X}`);
-  ok("GET /health", up.status === 200 && up.data?.ok === true);
+  ok("GET /", up.status === 200 && up.data?.ok === true);
   const notify = await request("POST", "/owner/notify", { storeId: "x", reason: "teste", messages: [] });
   ok("POST /owner/notify", notify.status === 200 && notify.data?.received === true);
 
