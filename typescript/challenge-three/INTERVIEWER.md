@@ -27,7 +27,7 @@ código determinístico. Ninguém disse isso pra ele no enunciado.
 | **Arquitetura / testabilidade** | achou a separação sozinho; determinístico isolado e testável | monólito frágil; regra no prompt |
 | **LLM engineering** | saída estruturada, sinaliza ambiguidade, trata falha | chuta no ambíguo, alucina produto/preço |
 | **Observabilidade** | instrumenta a call (tokens/latência + o que o modelo decidiu) e persiste num arquivo; dá pra investigar uma call depois | chamada é caixa-preta; nada persistido; não dá pra ver por que errou |
-| **Escalação (webdev)** | detecta quando não é pra resolver, escala pro dono via HTTP, sobe o mock e a call funciona de verdade; trata falha da call | não trata; "escala" sem chamada real ou sem endpoint; call quebra derruba o atendimento |
+| **Escalação (webdev)** | detecta quando não é pra resolver, adiciona `POST /owner/notify` no `app.ts` e o pipeline chama de verdade; trata falha da call | não trata; "escala" sem chamada real ou sem endpoint; call quebra derruba o atendimento |
 | **Domínio (casos que doem)** | acerta incluso-vs-extra, obrigatórios, mudança de ideia | só happy-path |
 | **Cabeça de escala** | fala de latência/custo/modelo/cache + como medir precisão | não menciona |
 | **Código + julgamento** | limpo, tipado, `SOLUTION.md` com tradeoffs e "em escala" | decisões não-explicadas |
@@ -56,7 +56,7 @@ o design, e aí **dropa um requisito novo, sem avisar**:
 - *"Chegou um follow-up: 'na verdade tira a cebola'. Trata a edição."* (estado da conversa)
 - *"O adicional 'bacon' passou a ter limite de 2 por lanche."* (mexe no `check`)
 - *"O webhook do dono agora exige um header `X-Store-Token` e responde 401 sem ele.
-  Adapta a call e trata o erro."* (mexe no endpoint mock + na chamada HTTP — webdev)
+  Adapta a call e trata o erro."* (mexe no `/owner/notify` do `app.ts` + na chamada HTTP — webdev)
 
 **Por que estender o próprio código:** prova que a entrega é dele (se AI-gerou
 tudo, trava no próprio repo), testa o design de base, execução ao vivo e domínio.
