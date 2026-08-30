@@ -40,8 +40,9 @@ só a qualidade da `interpret`.
 - **Escalar pro dono (3ª saída):** a `interpret` sinaliza `escalate` quando não é
   pra Brenda resolver (quer uma pessoa, reclamação, fora do cardápio) — distinto de
   `clarification` (pergunta que o cliente responde). Aí `handleConversation` chama
-  `notifyOwner`, um POST simples pro webhook do dono (mock em `mock/owner-endpoint.ts`,
-  `npm run mock-owner`), e devolve `{ ok:false, escalated:true }`. A call é
+  `notifyOwner`, um POST simples pro webhook do dono (estendi o servidor mock do
+  template — `mock/server.ts`, `npm run mock` — com a rota `POST /owner/notify`), e
+  devolve `{ ok:false, escalated:true }`. A call é
   fail-safe: se o webhook cai, a gente loga e segue — nunca derruba o atendimento.
   URL vem de `OWNER_WEBHOOK_URL` (default `localhost:4000`).
 
@@ -78,7 +79,7 @@ só a qualidade da `interpret`.
 ```bash
 npm test           # 12/12 verde — núcleo determinístico + escalação
 npm run precision  # com OPENAI_API_KEY: mede a interpretação (deve pontuar alto)
-npm run mock-owner # sobe o webhook do dono; escale numa conversa e veja chegar
+npm run mock       # sobe o servidor mock (/health + /owner/notify); escale e veja chegar
 ```
 
 `npm run precision -- --mock` **não** é sinal de precisão: o mock não interpreta.

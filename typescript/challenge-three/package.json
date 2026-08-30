@@ -6,7 +6,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "precision": "ts-node __tests__/precision/run.ts",
-    "mock-owner": "ts-node mock/owner-endpoint.ts"
+    "mock": "ts-node mock/server.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
