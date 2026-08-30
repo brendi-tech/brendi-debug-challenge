@@ -48,5 +48,10 @@
       ],
       "totalPrice": 31
     }
+  },
+  {
+    "useCase": "escalação (não é pra Brenda resolver)",
+    "messages": [{ "from": "customer", "text": "quero falar com o dono, tenho uma reclamação" }],
+    "expectEscalation": true
   }
 ]

@@ -28,6 +28,15 @@ do restaurante** quando não é pra Brenda resolver (ver abaixo). **Como você o
 o pipeline por dentro é decisão sua** — o que delega pra LLM, o que garante em
 código, como valida e precifica. O stub está em `src/handleConversation.ts`.
 
+Ela é servida por uma **API HTTP** (`src/app.ts`, Express) — é assim que o harness
+bate nela, como na Brenda real:
+
+| Rota | O quê |
+|---|---|
+| `GET /health` | vem pronto |
+| `POST /orders` | body `{ messages }` → devolve o `Result` (vem ligado ao `handleConversation`) |
+| `POST /owner/notify` | **você cria** — recebe a escalação pro dono |
+
 Não tem roteiro: **os testes são a especificação.** Faça-os passar e maximize a
 precisão.
 
@@ -35,17 +44,18 @@ precisão.
 
 ```bash
 npm install
-npm test              # comportamento esperado (LLM controlada) — faça passar
-npm run precision     # qualidade da interpretação com a LLM real
+npm test              # contrato determinístico (LLM controlada, in-process) — faça passar
+npm start             # sobe a API (src/app.ts) em http://localhost:5052
+npm run test:api      # NOUTRO terminal, com o server no ar: bate nos endpoints por HTTP
 ```
 
-- `npm test` roda com uma **LLM de teste** (`makeFakeLLM`) que devolve uma seleção
-  fixa, então é determinístico. Cobre o que seu pipeline deve aceitar, recusar e
-  precificar — incluindo o caso incluso-vs-extra da marmita.
-- `npm run precision` usa a LLM de verdade (precisa de `OPENAI_API_KEY` — peça a
-  chave ao entrevistador, copie `.env.example` para `.env`). Roda conversas reais
-  e compara o `Checkout` produzido com o esperado. É uma **nota**, não pass/fail —
-  o objetivo é maximizar a precisão. `-- --mock` roda sem chave só pra ver de pé.
+- `npm test` usa uma **LLM de teste** (`makeFakeLLM`) que devolve uma seleção fixa,
+  então é determinístico. Cobre o que seu pipeline deve aceitar, recusar e precificar
+  — incluindo o incluso-vs-extra da marmita. Não precisa de server nem de chave.
+- `npm run test:api` **depende do server no ar** (`npm start`) e precisa de
+  `OPENAI_API_KEY` (peça a chave, copie `.env.example` para `.env`). Bate em
+  `/health`, `/owner/notify` e manda conversas reais pro `/orders` — a precisão do
+  `/orders` é uma **nota** (maximize), o resto é pass/fail.
 
 ## O que a gente valoriza (seja pleno)
 
@@ -63,17 +73,17 @@ npm run precision     # qualidade da interpretação com a LLM real
   só no console), pra dar pra investigar uma call depois.
 - **Escalar pro dono quando não é pra resolver.** Nem tudo é pedido: o cliente
   querendo falar com uma pessoa, uma reclamação, algo fora do cardápio. Nesses
-  casos a Brenda deve **acionar o dono do restaurante por uma chamada HTTP**. Já
-  tem um servidor mock (`npm run mock`, com um `/health`) — **estenda com o endpoint
-  que receber essa notificação** e faça a call de verdade. Contrato (rota, método,
-  payload) é seu; trate a falha da chamada sem derrubar o atendimento.
+  casos a Brenda deve **acionar o dono do restaurante por uma chamada HTTP**. O
+  `app.ts` já é um server Express com `/health` e `/orders` — **adicione o endpoint
+  `POST /owner/notify`** que recebe a escalação, e faça o pipeline **chamá-lo** de
+  verdade quando escalar. Trate a falha da chamada sem derrubar o atendimento.
 
 ## O que já vem pronto
 
 `src/types.ts` (contratos), `src/menu.ts` (loader), `src/llm.ts` (wrapper da LLM +
-`makeFakeLLM`), `data/menu.json` (cardápio), o harness de `npm test` /
-`npm run precision`, e um **servidor mock** (`mock/server.ts`, `npm run mock`) com
-um `/health` — a casca pra você criar/estender endpoints. O resto é com você.
+`makeFakeLLM`), `data/menu.json` (cardápio), a **API** `src/app.ts` (Express, com
+`/health` + `/orders` já ligados), e os harnesses `npm test` (in-process) e
+`npm run test:api` (bate no server). O resto é com você.
 
 ## Entrega
 

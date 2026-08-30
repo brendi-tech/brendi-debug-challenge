@@ -16,8 +16,8 @@
 
 Por que isso importa: é o único jeito de ter **testes determinísticos** com uma
 LLM não-determinística no meio. Os `behaviour.test.ts` injetam uma LLM controlada
-(`makeFakeLLM`) e batem no `priceCheckout` de forma binária; a `precision` mede
-só a qualidade da `interpret`.
+(`makeFakeLLM`) e batem no `priceCheckout` de forma binária (in-process); o
+`test:api` mede a qualidade da `interpret` batendo no server real.
 
 ## Escolhas pontuais
 
@@ -40,11 +40,10 @@ só a qualidade da `interpret`.
 - **Escalar pro dono (3ª saída):** a `interpret` sinaliza `escalate` quando não é
   pra Brenda resolver (quer uma pessoa, reclamação, fora do cardápio) — distinto de
   `clarification` (pergunta que o cliente responde). Aí `handleConversation` chama
-  `notifyOwner`, um POST simples pro webhook do dono (estendi o servidor mock do
-  template — `mock/server.ts`, `npm run mock` — com a rota `POST /owner/notify`), e
-  devolve `{ ok:false, escalated:true }`. A call é
-  fail-safe: se o webhook cai, a gente loga e segue — nunca derruba o atendimento.
-  URL vem de `OWNER_WEBHOOK_URL` (default `localhost:4000`).
+  `notifyOwner`, um POST simples pro webhook do dono (adicionei a rota
+  `POST /owner/notify` no `app.ts`), e devolve `{ ok:false, escalated:true }`. A
+  call é fail-safe: se o webhook cai, a gente loga e segue — nunca derruba o
+  atendimento. URL vem de `OWNER_WEBHOOK_URL` (default `localhost:5052`).
 
 ## Em escala (o que eu faria com mais tempo / volume)
 
@@ -77,9 +76,9 @@ só a qualidade da `interpret`.
 ## Como validar
 
 ```bash
-npm test           # 12/12 verde — núcleo determinístico + escalação
-npm run precision  # com OPENAI_API_KEY: mede a interpretação (deve pontuar alto)
-npm run mock       # sobe o servidor mock (/health + /owner/notify); escale e veja chegar
+npm test           # 12/12 verde — núcleo determinístico + escalação (in-process)
+npm start          # sobe a API (/health, /orders, /owner/notify) em :5052
+npm run test:api   # noutro terminal, com o server no ar + OPENAI_API_KEY: bate por HTTP
 ```
 
-`npm run precision -- --mock` **não** é sinal de precisão: o mock não interpreta.
+`npm test` não precisa de chave nem server; `test:api` precisa dos dois.

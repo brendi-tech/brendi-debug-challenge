@@ -5,7 +5,7 @@
 import type { Conversation } from "../types";
 import { logLLM } from "./observability";
 
-const URL = process.env.OWNER_WEBHOOK_URL || "http://localhost:4000/owner/notify";
+const URL = process.env.OWNER_WEBHOOK_URL || "http://localhost:5052/owner/notify";
 
 export type OwnerNotice = {
   storeId: string;
