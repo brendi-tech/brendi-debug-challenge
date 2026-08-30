@@ -1,10 +1,4 @@
-// Servidor mock local (SOLUÇÃO: estendi a casca do template com a rota do dono).
-// Zero deps (http nativo). Sobe com: npm run mock
-//
-//   GET  /health        -> 200 { ok: true }
-//   POST /owner/notify  -> 200 { received: true }   (recebe a escalação da Brenda)
-//
-// Pra adicionar uma rota, registre em `routes` no formato "MÉTODO /caminho".
+// Servidor mock local (zero deps). npm run mock
 
 import { createServer, IncomingMessage, ServerResponse } from "http";
 
@@ -41,7 +35,5 @@ export const server = createServer((req, res) => {
 });
 
 if (require.main === module) {
-  server.listen(PORT, () =>
-    console.log(`[mock] http://localhost:${PORT} — rotas: ${Object.keys(routes).join(", ")}`)
-  );
+  server.listen(PORT, () => console.log(`[mock] http://localhost:${PORT}`));
 }

@@ -1,13 +1,4 @@
-// ============================================================================
-// compareCheckout — FORNECIDO. Versao enxuta do comparador de precisao do bot.
-//
-// Regra-chave (igual ao real): ASSERCAO ESPARSA. So compara os campos PRESENTES
-// no `expected`. Campos undefined no expected sao ignorados, e campos extras no
-// `actual` nao reprovam. Produtos casam por `productId` (ordem nao importa).
-//
-// `shouldBeIncluded: false` num produto/escolha inverte: passa se estiver
-// AUSENTE (usado pra afirmar "nao deveria ter X").
-// ============================================================================
+// Comparação esparsa: só assere os campos presentes no `expected`.
 
 import type { Checkout, CheckoutProduct } from "./types";
 

@@ -1,13 +1,4 @@
-// ============================================================================
-// Precision runner — FORNECIDO. Mede a precisão do seu pipeline nos casos reais,
-// do mesmo jeito que os testes de precisão da Brenda: roda a conversa e compara
-// o Checkout produzido com o `expectedCheckout` via compareCheckout (esparso).
-//
-//   npm run precision            -> LLM de verdade (precisa de OPENAI_API_KEY)
-//   npm run precision -- --mock  -> mock offline (só pra ver o harness de pé)
-//
-// É uma NOTA, não pass/fail binário. O objetivo é maximizar a precisão.
-// ============================================================================
+// Nota de precisão (não pass/fail). `-- --mock` roda sem chave.
 
 import "dotenv/config";
 import { loadMenu } from "../../src/menu";
