@@ -1,11 +1,4 @@
-// Servidor mock local — a casca mínima pra você ter onde criar endpoints.
-// Já vem com um /health só pra existir uma rota. Estenda à vontade: adicione
-// as rotas que o seu desafio pedir (ex.: receber a notificação do dono).
-// Zero deps (http nativo). Sobe com: npm run mock
-//
-//   GET /health  -> 200 { ok: true }
-//
-// Pra adicionar uma rota, registre em `routes` no formato "MÉTODO /caminho".
+// Servidor mock local (zero deps). npm run mock
 
 import { createServer, IncomingMessage, ServerResponse } from "http";
 
@@ -18,12 +11,6 @@ const json = (res: ServerResponse, status: number, data: unknown) => {
 
 const routes: Record<string, Handler> = {
   "GET /health": (_req, res) => json(res, 200, { ok: true }),
-
-  // Exemplo de como estender (descomente/adapte):
-  // "POST /owner/notify": (_req, res, body) => {
-  //   console.log("[mock] recebido:", body);
-  //   json(res, 200, { received: true });
-  // },
 };
 
 const PORT = Number(process.env.MOCK_PORT || 4000);
@@ -39,7 +26,5 @@ export const server = createServer((req, res) => {
 });
 
 if (require.main === module) {
-  server.listen(PORT, () =>
-    console.log(`[mock] http://localhost:${PORT} — rotas: ${Object.keys(routes).join(", ")}`)
-  );
+  server.listen(PORT, () => console.log(`[mock] http://localhost:${PORT}`));
 }

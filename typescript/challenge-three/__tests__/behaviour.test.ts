@@ -4,10 +4,7 @@ import { makeFakeLLM } from "../src/llm";
 import { handleConversation } from "../src/handleConversation";
 import type { Checkout } from "../src/types";
 
-// Estes testes controlam a LLM (makeFakeLLM devolve a seleção que você mandar),
-// então o comportamento é determinístico. Eles definem o CONTRATO: o que seu
-// pipeline deve aceitar, recusar e precificar. Como você organiza por dentro é
-// com você — só faça-os passar.
+// makeFakeLLM devolve a seleção que você mandar → comportamento determinístico.
 
 const menu = loadMenu();
 const convo = { storeId: menu.storeId, messages: [{ from: "customer" as const, text: "..." }] };
@@ -24,7 +21,6 @@ describe("recusas (guardrails)", () => {
     expect((await run({ products: [{ productId: "x-salada", quantity: 0 }] })).ok).toBe(false);
   });
   it("escolha que não pertence ao produto", async () => {
-    // x-bacon não tem custom nenhum
     expect((await run({ products: [{ productId: "x-bacon", quantity: 1, chosen: [{ choiceId: "bacon" }] }] })).ok).toBe(false);
   });
   it("custom obrigatório sem escolha (batata sem tamanho)", async () => {
@@ -55,7 +51,6 @@ describe("precificação (preço sempre do menu)", () => {
     if (r.ok) expect(r.checkout.totalPrice).toBeCloseTo(14, 2);
   });
 
-  // O caso que separa: incluso vs extra.
   it("marmita com 2 carnes = 1 inclusa + 1 extra, NÃO 2 marmitas", async () => {
     const r = await run({
       products: [{ productId: "marmita", quantity: 1, chosen: [{ choiceId: "bife", quantity: 1 }, { choiceId: "frango", quantity: 1 }] }],
