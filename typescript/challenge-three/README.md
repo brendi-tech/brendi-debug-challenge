@@ -44,18 +44,29 @@ precisão.
 
 ```bash
 npm install
-npm test              # contrato determinístico (LLM controlada, in-process) — faça passar
-npm start             # sobe a API (src/app.ts) em http://localhost:5052
-npm run test:api      # NOUTRO terminal, com o server no ar: bate nos endpoints por HTTP
 ```
 
-- `npm test` usa uma **LLM de teste** (`makeFakeLLM`) que devolve uma seleção fixa,
-  então é determinístico. Cobre o que seu pipeline deve aceitar, recusar e precificar
-  — incluindo o incluso-vs-extra da marmita. Não precisa de server nem de chave.
-- `npm run test:api` **depende do server no ar** (`npm start`) e precisa de
-  `OPENAI_API_KEY` (peça a chave, copie `.env.example` para `.env`). Bate em
-  `/`, `/owner/notify` e manda conversas reais pro `/orders` — a precisão do
-  `/orders` é uma **nota** (maximize), o resto é pass/fail.
+**Enquanto você desenvolve** — instantâneo, sem server e sem chave. É o seu loop:
+
+```bash
+npm test              # contrato determinístico: LLM controlada testa preço/guardrails
+```
+
+**Pra ver o real end-to-end** — precisa da chave (`cp .env.example .env`) e de **dois
+terminais**:
+
+```bash
+# terminal 1 — sobe a API em http://localhost:5052
+npm start
+# terminal 2 — bate nos endpoints por HTTP e pontua a precisão (LLM real)
+npm run test:api
+```
+
+Por que dois: `npm test` roda a lógica com uma **LLM de teste** (`makeFakeLLM`), então
+é determinístico, grátis e instantâneo — dá pra testar até o que a LLM real nunca
+faria de propósito (produto inválido, etc.). `npm run test:api` usa a **LLM de
+verdade** contra o server no ar: a precisão do `/orders` é uma **nota** (maximize), o
+resto (`/`, `/owner/notify`) é pass/fail.
 
 ## Requisitos
 
