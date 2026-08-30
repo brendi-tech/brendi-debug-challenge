@@ -23,7 +23,8 @@ handleConversation(conversation, menu, llm): Promise<Result>
 ```
 
 Ela recebe a conversa e o cardápio e devolve o pedido montado (um `Checkout` com
-`totalPrice`), ou uma recusa quando for inválido / ambíguo. **Como você organiza
+`totalPrice`), ou uma recusa quando for inválido / ambíguo — ou **escala pro dono
+do restaurante** quando não é pra Brenda resolver (ver abaixo). **Como você organiza
 o pipeline por dentro é decisão sua** — o que delega pra LLM, o que garante em
 código, como valida e precifica. O stub está em `src/handleConversation.ts`.
 
@@ -60,6 +61,12 @@ npm run precision     # qualidade da interpretação com a LLM real
   o modelo decidiu — o suficiente pra entender *por que* um pedido saiu como saiu.
   Deixe aparecendo quando roda **e persista esse rastro num arquivo separado** (não
   só no console), pra dar pra investigar uma call depois.
+- **Escalar pro dono quando não é pra resolver.** Nem tudo é pedido: o cliente
+  querendo falar com uma pessoa, uma reclamação, algo fora do cardápio. Nesses
+  casos a Brenda deve **acionar o dono do restaurante por uma chamada HTTP**. Suba
+  um **endpoint mock** simples pra receber essa notificação e faça a call de
+  verdade — subir o endpoint e chamar faz parte do teste. Contrato (rota, método,
+  payload) é seu; trate a falha da chamada sem derrubar o atendimento.
 
 ## O que já vem pronto
 
