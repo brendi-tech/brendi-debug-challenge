@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import { loadMenu } from "./menu";
 import { createLLM } from "./llm";
