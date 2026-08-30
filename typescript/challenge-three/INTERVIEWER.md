@@ -1,6 +1,14 @@
 # Interno — como avaliar o challenge-three (pleno)
 
 > **Não mandar este arquivo pro candidato.** (Remova/ignore no que ele recebe.)
+>
+> **A rubrica vive AQUI de propósito, não no README.** O README só diz *o que
+> construir* (tarefas + testes como spec). Se a gente listar lá "o que a gente
+> valoriza" (separar determinístico, clarificar ambiguidade, cabeça de escala…), o
+> candidato cola no prompt e a IA molda a solução pra bater cada ponto — fabricando
+> o sinal. Não re-vaze a rubrica no README. Uma solução que acerta todos os pontos
+> mas **não se sustenta no walkthrough** (não explica o *porquê*, trava ao estender)
+> é AI-shaped: o ao-vivo é o filtro.
 
 Testa o que define **pleno** pra gente: desenhar um pipeline LLM **confiável e
 testável** e pensar em **precisão / latência / custo em escala** — não só "sabe
