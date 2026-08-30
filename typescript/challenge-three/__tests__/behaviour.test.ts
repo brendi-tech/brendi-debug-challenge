@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { loadMenu } from "../src/menu";
 import { makeFakeLLM } from "../src/llm";
 import { handleConversation } from "../src/handleConversation";
@@ -66,5 +66,31 @@ describe("precificação (preço sempre do menu)", () => {
       expect(r.checkout.products[0].quantity).toBe(1);
       expect(r.checkout.totalPrice).toBeCloseTo(28 + 9, 2);
     }
+  });
+});
+
+describe("escalação (aciona o dono via HTTP)", () => {
+  beforeEach(() => vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, status: 200 }))));
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("quando não é pra resolver, escala e chama o webhook do dono", async () => {
+    const llm = makeFakeLLM({ escalate: { reason: "cliente quer falar com uma pessoa" } });
+    const r = await handleConversation(convo, menu, llm);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.escalated).toBe(true);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    const [url, init] = (fetch as any).mock.calls[0];
+    expect(String(url)).toContain("/owner/notify");
+    expect(init.method).toBe("POST");
+    const body = JSON.parse(init.body);
+    expect(body.storeId).toBe(menu.storeId);
+    expect(body.reason).toContain("falar com uma pessoa");
+  });
+
+  it("pedido normal NÃO aciona o dono", async () => {
+    const llm = makeFakeLLM({ products: [{ productId: "x-salada", quantity: 1 }] });
+    const r = await handleConversation(convo, menu, llm);
+    expect(r.ok).toBe(true);
+    expect(fetch).not.toHaveBeenCalled();
   });
 });

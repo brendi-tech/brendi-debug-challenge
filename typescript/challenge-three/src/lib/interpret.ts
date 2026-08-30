@@ -6,7 +6,7 @@ import type { Checkout, Conversation, Menu } from "../types";
 import type { LLM } from "../llm";
 import { logLLM } from "./observability";
 
-export type Interpretation = { checkout: Checkout; clarification?: string };
+export type Interpretation = { checkout: Checkout; clarification?: string; escalate?: { reason: string } };
 
 // Compacta o menu pro prompt: só o que a LLM precisa pra escolher ids.
 function menuForPrompt(menu: Menu) {
@@ -30,10 +30,11 @@ function menuForPrompt(menu: Menu) {
 
 const SYSTEM = `Você monta pedidos a partir de uma conversa de WhatsApp, usando SÓ o cardápio dado.
 Devolva SOMENTE JSON:
-{ "reasoning": "<1 frase: por que esses itens, ou por que clarificar>", "products": [ { "productId": "<id do cardápio>", "quantity": <inteiro>, "chosen": [ { "choiceId": "<id do cardápio>", "quantity": <inteiro, opcional> } ] } ], "clarification": "<pergunta curta, só se ambíguo>" }
+{ "reasoning": "<1 frase: por que esses itens, ou por que clarificar/escalar>", "products": [ { "productId": "<id do cardápio>", "quantity": <inteiro>, "chosen": [ { "choiceId": "<id do cardápio>", "quantity": <inteiro, opcional> } ] } ], "clarification": "<pergunta curta, só se ambíguo>", "escalate": { "reason": "<motivo curto, só se não for pra você resolver>" } }
 Regras:
 - Use apenas productId/choiceId que existem no cardápio. NUNCA invente produto, opção ou preço.
 - Se o cliente for ambíguo (dois produtos batem igual), deixe "products" vazio e escreva "clarification".
+- Se NÃO for pra você resolver (cliente quer falar com uma pessoa/o dono, reclamação, ou algo fora do cardápio/fora de montar pedido), deixe "products" vazio e devolva "escalate" com o motivo. Escalar ≠ clarificar: clarificar é pergunta que o cliente responde; escalar é caso pra um humano.
 - Complementos já inclusos (ex.: as carnes de uma marmita) também vão em "chosen".
 - Um complemento pode aceitar VÁRIAS opções (veja "min"/"max"). Se o cliente citar mais de uma opção válida do mesmo grupo (ex.: "bife e frango"), inclua TODAS — não peça pra escolher uma.
 - Considere a conversa inteira (o cliente pode mudar de ideia).`;
@@ -58,8 +59,13 @@ export async function interpret(
   if (typeof parsed.reasoning === "string" && parsed.reasoning.trim()) {
     logLLM("interpret", { reasoning: parsed.reasoning.trim() });
   }
+  const escalateReason =
+    parsed.escalate && typeof parsed.escalate.reason === "string" && parsed.escalate.reason.trim()
+      ? parsed.escalate.reason.trim()
+      : undefined;
   return {
     checkout: { products: Array.isArray(parsed.products) ? parsed.products : [] },
     clarification: typeof parsed.clarification === "string" && parsed.clarification.trim() ? parsed.clarification : undefined,
+    escalate: escalateReason ? { reason: escalateReason } : undefined,
   };
 }

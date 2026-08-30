@@ -37,8 +37,19 @@ só a qualidade da `interpret`.
   de 1 frase do modelo (`interpret`). O `reasoning` vem primeiro no JSON, então
   funciona como um chain-of-thought curto que ainda ajuda a decisão. Falha de I/O
   do log é engolida de propósito — o rastro nunca pode derrubar o pedido.
+- **Escalar pro dono (3ª saída):** a `interpret` sinaliza `escalate` quando não é
+  pra Brenda resolver (quer uma pessoa, reclamação, fora do cardápio) — distinto de
+  `clarification` (pergunta que o cliente responde). Aí `handleConversation` chama
+  `notifyOwner`, um POST simples pro webhook do dono (mock em `mock/owner-endpoint.ts`,
+  `npm run mock-owner`), e devolve `{ ok:false, escalated:true }`. A call é
+  fail-safe: se o webhook cai, a gente loga e segue — nunca derruba o atendimento.
+  URL vem de `OWNER_WEBHOOK_URL` (default `localhost:4000`).
 
 ## Em escala (o que eu faria com mais tempo / volume)
+
+- **Webhook do dono confiável:** hoje é fire-and-forget. Em produção: retry com
+  backoff + fila (a notificação não pode se perder), idempotência por conversa, e
+  auth no webhook (token/HMAC).
 
 - **Medir precisão como métrica viva**, não só no dev: precisão por campo
   (produto, adicional, quantidade) em produção, não só um número agregado — pra
@@ -65,8 +76,9 @@ só a qualidade da `interpret`.
 ## Como validar
 
 ```bash
-npm test          # 10/10 verde — o núcleo determinístico
+npm test           # 12/12 verde — núcleo determinístico + escalação
 npm run precision  # com OPENAI_API_KEY: mede a interpretação (deve pontuar alto)
+npm run mock-owner # sobe o webhook do dono; escale numa conversa e veja chegar
 ```
 
 `npm run precision -- --mock` **não** é sinal de precisão: o mock não interpreta.

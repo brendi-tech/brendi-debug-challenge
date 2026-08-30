@@ -119,8 +119,9 @@ export type Checkout = {
 
 /**
  * O que o pipeline devolve: o pedido montado (Checkout com totalPrice), ou uma
- * recusa. Use `clarification` quando a conversa for ambigua demais pra montar.
+ * recusa. Use `clarification` quando a conversa for ambigua demais pra montar;
+ * `escalated` quando nao e pra Brenda resolver e o dono foi acionado.
  */
 export type Result =
   | { ok: true; checkout: Checkout }
-  | { ok: false; clarification?: string; reason?: string };
+  | { ok: false; clarification?: string; reason?: string; escalated?: boolean };
