@@ -63,16 +63,17 @@ npm run precision     # qualidade da interpretação com a LLM real
   só no console), pra dar pra investigar uma call depois.
 - **Escalar pro dono quando não é pra resolver.** Nem tudo é pedido: o cliente
   querendo falar com uma pessoa, uma reclamação, algo fora do cardápio. Nesses
-  casos a Brenda deve **acionar o dono do restaurante por uma chamada HTTP**. Suba
-  um **endpoint mock** simples pra receber essa notificação e faça a call de
-  verdade — subir o endpoint e chamar faz parte do teste. Contrato (rota, método,
+  casos a Brenda deve **acionar o dono do restaurante por uma chamada HTTP**. Já
+  tem um servidor mock (`npm run mock`, com um `/health`) — **estenda com o endpoint
+  que receber essa notificação** e faça a call de verdade. Contrato (rota, método,
   payload) é seu; trate a falha da chamada sem derrubar o atendimento.
 
 ## O que já vem pronto
 
 `src/types.ts` (contratos), `src/menu.ts` (loader), `src/llm.ts` (wrapper da LLM +
-`makeFakeLLM`), `data/menu.json` (cardápio), e o harness de `npm test` /
-`npm run precision`. O resto é com você.
+`makeFakeLLM`), `data/menu.json` (cardápio), o harness de `npm test` /
+`npm run precision`, e um **servidor mock** (`mock/server.ts`, `npm run mock`) com
+um `/health` — a casca pra você criar/estender endpoints. O resto é com você.
 
 ## Entrega
 
