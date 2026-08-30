@@ -1,3 +1,5 @@
+// NÃO MEXER — testes que definem o contrato. Faça passar, não edite.
+
 import { describe, it, expect } from "vitest";
 import { loadMenu } from "../src/menu";
 import { makeFakeLLM } from "../src/llm";

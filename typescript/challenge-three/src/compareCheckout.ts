@@ -1,3 +1,4 @@
+// NÃO MEXER — utilitário fornecido (comparador dos testes).
 // Comparação esparsa: só assere os campos presentes no `expected`.
 
 import type { Checkout, CheckoutProduct } from "./types";
