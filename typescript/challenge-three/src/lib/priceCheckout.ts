@@ -76,5 +76,17 @@ export function priceCheckout(menu: Menu, checkout: Checkout): Result {
     products.push({ productId: product.slug, quantity: cp.quantity, chosen, notes: cp.notes });
   }
 
-  return { ok: true, checkout: { products, totalPrice: round(total) } };
+  const totalPrice = round(total);
+
+  // pagamento: método tem que ser aceito; troco (dinheiro) não pode ser < total
+  const payment = checkout.payment;
+  if (payment) {
+    if (!menu.acceptedPayments.includes(payment.method)) return { ok: false, reason: `pagamento não aceito: ${payment.method}` };
+    if (payment.changeFor !== undefined) {
+      if (payment.method !== "dinheiro") return { ok: false, reason: "troco só faz sentido em dinheiro" };
+      if (payment.changeFor < totalPrice) return { ok: false, clarification: `O total deu ${totalPrice}. Pra quanto você quer o troco?` };
+    }
+  }
+
+  return { ok: true, checkout: { products, totalPrice, address: checkout.address, payment } };
 }

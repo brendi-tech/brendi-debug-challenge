@@ -1,6 +1,7 @@
 {
   "storeId": "brenda-burger-sjc",
   "storeName": "Brenda Burger",
+  "acceptedPayments": ["pix", "dinheiro", "credito"],
   "categories": [
     { "slug": "burgers", "name": "Hambúrgueres", "type": "normal", "productsPaths": ["x-salada", "x-bacon", "x-tudo"] },
     { "slug": "acompanhamentos", "name": "Acompanhamentos", "type": "normal", "productsPaths": ["batata"] },

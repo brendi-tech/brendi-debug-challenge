@@ -11,7 +11,7 @@
 import "dotenv/config";
 import http from "http";
 import { compareCheckout } from "./src/compareCheckout";
-import type { Checkout, Message } from "./src/types";
+import type { Checkout, Message, CustomerContext } from "./src/types";
 import cases from "./cases.json";
 
 const BASE = process.env.BASE_URL || "http://localhost:5052";
@@ -20,6 +20,7 @@ const G = "\x1b[92m", R = "\x1b[91m", B = "\x1b[1m", X = "\x1b[0m";
 type Case = {
   useCase: string;
   messages: Message[];
+  customer?: CustomerContext;
   expectedCheckout?: Checkout;
   expectClarification?: boolean;
   expectEscalation?: boolean;
@@ -70,7 +71,7 @@ async function main() {
   console.log(`\n${B}POST /orders — ${(cases as Case[]).length} casos${X}`);
   let hit = 0;
   for (const c of cases as Case[]) {
-    const { status, data, error } = await request("POST", "/orders", { messages: c.messages });
+    const { status, data, error } = await request("POST", "/orders", { messages: c.messages, customer: c.customer });
     let good = false, info = "";
     if (error || status !== 200) {
       info = error ?? `HTTP ${status}`;

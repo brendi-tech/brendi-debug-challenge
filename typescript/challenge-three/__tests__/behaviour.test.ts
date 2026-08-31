@@ -91,3 +91,19 @@ describe("escalação (aciona o dono via HTTP)", () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 });
+
+describe("pagamento (guardrails)", () => {
+  it("método não aceito é recusado", async () => {
+    const r = await run({ products: [{ productId: "x-salada", quantity: 1 }], payment: { method: "debito" } });
+    expect(r.ok).toBe(false);
+  });
+  it("troco menor que o total é recusado", async () => {
+    const r = await run({ products: [{ productId: "x-tudo", quantity: 1 }], payment: { method: "dinheiro", changeFor: 10 } });
+    expect(r.ok).toBe(false);
+  });
+  it("pagamento válido passa", async () => {
+    const r = await run({ products: [{ productId: "x-salada", quantity: 1 }], payment: { method: "pix" } });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.checkout.payment?.method).toBe("pix");
+  });
+});

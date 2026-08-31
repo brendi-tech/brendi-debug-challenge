@@ -50,16 +50,29 @@ export type ProductCategory = {
   type: "normal";
 };
 
+export type PaymentMethod = "pix" | "dinheiro" | "credito" | "debito";
+
 export type Menu = {
   storeId: string;
   storeName: string;
   categories: ProductCategory[];
   products: Product[];
   customs: ProductCustom[];
+  acceptedPayments: PaymentMethod[];
 };
 
-export type Message = { from: "customer" | "store"; text: string };
-export type Conversation = { storeId: string; messages: Message[] };
+export type Message = { from: "customer" | "store"; text: string; at?: string };
+
+export type SavedAddress = { label: string; text: string };
+export type Payment = { method: PaymentMethod; changeFor?: number };
+
+/** Dados do cliente que a Brenda pode reaproveitar na conversa. */
+export type CustomerContext = {
+  addresses?: SavedAddress[];
+  lastOrder?: Checkout;
+};
+
+export type Conversation = { storeId: string; messages: Message[]; customer?: CustomerContext };
 
 export type CheckoutChosen = {
   choiceId: string;
@@ -77,9 +90,13 @@ export type CheckoutProduct = {
   shouldBeIncluded?: boolean;
 };
 
+export type DeliveryAddress = { label?: string; text: string };
+
 export type Checkout = {
   products: CheckoutProduct[];
   totalPrice?: number;
+  address?: DeliveryAddress;
+  payment?: Payment;
   orderFinished?: boolean;
 };
 
