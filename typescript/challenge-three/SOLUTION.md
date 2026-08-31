@@ -30,6 +30,10 @@ LLM não-determinística no meio. Os `behaviour.test.ts` injetam uma LLM control
   cobra `extraPrice` (marmita com 2 carnes = 1 inclusa + 1 extra).
 - **Menu compacto no prompt:** mando só `productId/name/aliases + choices`, não o
   cardápio inteiro, pra cortar tokens.
+- **Janela de contexto:** mando só as **últimas ~40 mensagens** pro prompt. Conversa
+  de cliente antigo carrega histórico de sessões passadas (pedidos já entregues,
+  conversa fiada) e estoura a janela do modelo; o pedido atual está no fim. Em
+  escala: resumir o histórico velho em vez de simplesmente cortar.
 - **Endereço/último pedido: referência resolvida em CÓDIGO, não pela LLM.** A LLM só
   diz *qual* apelido salvo o cliente citou ("casa") ou que é pra repetir o último;
   quem copia o `text` do endereço salvo e os produtos do `lastOrder` é o

@@ -46,7 +46,12 @@ export async function interpret(
   menu: Menu,
   llm: LLM
 ): Promise<Interpretation> {
+  // Janela de contexto: a conversa pode ser enorme (cliente antigo, sessões
+  // passadas). Mando só as últimas N mensagens — o pedido atual está no fim; o
+  // histórico velho é ruído e não cabe na janela do modelo.
+  const RECENT = 40;
   const convo = conversation.messages
+    .slice(-RECENT)
     .map((m) => `${m.at ? `[${m.at}] ` : ""}${m.from}: ${m.text}`)
     .join("\n");
 
