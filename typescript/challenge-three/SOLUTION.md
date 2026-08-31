@@ -30,6 +30,14 @@ LLM não-determinística no meio. Os `behaviour.test.ts` injetam uma LLM control
   cobra `extraPrice` (marmita com 2 carnes = 1 inclusa + 1 extra).
 - **Menu compacto no prompt:** mando só `productId/name/aliases + choices`, não o
   cardápio inteiro, pra cortar tokens.
+- **Endereço/último pedido: referência resolvida em CÓDIGO, não pela LLM.** A LLM só
+  diz *qual* apelido salvo o cliente citou ("casa") ou que é pra repetir o último;
+  quem copia o `text` do endereço salvo e os produtos do `lastOrder` é o
+  `interpret` (determinístico). Assim "manda pra casa" nunca vira um endereço
+  alucinado, e "o de sempre" é exatamente o pedido anterior.
+- **Pagamento é guardrail determinístico:** `priceCheckout` recusa método fora de
+  `acceptedPayments` e `changeFor < total` (troco só em dinheiro). A LLM extrai; o
+  código garante — igual ao preço.
 - **Observabilidade da call:** um sink único (`lib/observability.ts`) manda cada
   evento pra **stderr** (visão ao vivo, sem sujar o pedido no stdout) **e** appenda
   num **arquivo JSONL separado** (`llm-calls.jsonl`, um evento por linha) pra
