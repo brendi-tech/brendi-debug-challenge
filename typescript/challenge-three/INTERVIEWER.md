@@ -65,6 +65,10 @@ o design, e aí **dropa um requisito novo, sem avisar**:
 - *"O adicional 'bacon' passou a ter limite de 2 por lanche."* (mexe no `check`)
 - *"O webhook do dono agora exige um header `X-Store-Token` e responde 401 sem ele.
   Adapta a call e trata o erro."* (mexe no `/owner/notify` do `app.ts` + na chamada HTTP — webdev)
+- *"Esse cliente é antigo: o histórico tem 3.000 mensagens e estoura a janela do
+  modelo. Faz o pipeline aguentar."* (janela de contexto — espera windowing/recência/
+  resumo, não mandar a conversa inteira no prompt. Pergunte como ele decidiria o que
+  cortar sem perder o pedido atual.)
 
 **Por que estender o próprio código:** prova que a entrega é dele (se AI-gerou
 tudo, trava no próprio repo), testa o design de base, execução ao vivo e domínio.

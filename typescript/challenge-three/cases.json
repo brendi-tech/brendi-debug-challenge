@@ -1,7 +1,14 @@
 [
   {
-    "useCase": "simples",
-    "messages": [{ "from": "customer", "text": "oi, quero um x-salada" }],
+    "useCase": "simples (histórico antigo do mesmo cliente)",
+    "messages": [
+      { "from": "customer", "text": "oi", "at": "2026-08-20T12:00:00Z" },
+      { "from": "store", "text": "Oi! Bem-vindo de volta 😊", "at": "2026-08-20T12:00:05Z" },
+      { "from": "customer", "text": "o pedido de ontem chegou certinho, valeu", "at": "2026-08-20T12:01:00Z" },
+      { "from": "store", "text": "Que bom! Precisando é só chamar.", "at": "2026-08-20T12:01:10Z" },
+      { "from": "customer", "text": "boa noite", "at": "2026-08-29T20:30:00Z" },
+      { "from": "customer", "text": "oi, quero um x-salada", "at": "2026-08-29T20:31:00Z" }
+    ],
     "expectedCheckout": { "products": [{ "productId": "x-salada", "quantity": 1 }], "totalPrice": 22 }
   },
   {
@@ -24,7 +31,11 @@
   },
   {
     "useCase": "incluso vs extra (marmita)",
-    "messages": [{ "from": "customer", "text": "quero uma marmita com bife e frango" }],
+    "messages": [
+      { "from": "customer", "text": "oi, vcs têm marmita?" },
+      { "from": "store", "text": "Temos sim! Qual carne você quer?" },
+      { "from": "customer", "text": "quero uma marmita com bife e frango" }
+    ],
     "expectedCheckout": {
       "products": [{ "productId": "marmita", "quantity": 1, "chosen": [{ "choiceId": "bife" }, { "choiceId": "frango" }] }],
       "totalPrice": 37
@@ -39,39 +50,28 @@
     "expectedCheckout": { "products": [{ "productId": "x-salada", "quantity": 1 }], "totalPrice": 22 }
   },
   {
-    "useCase": "escolha obrigatória + 2 produtos",
-    "messages": [{ "from": "customer", "text": "uma batata grande e uma coca" }],
+    "useCase": "escolha obrigatória + 2 produtos (com entrega e pagamento)",
+    "messages": [
+      { "from": "customer", "text": "boa noite", "at": "2026-08-29T20:00:00Z" },
+      { "from": "store", "text": "Boa noite! O que vai ser?", "at": "2026-08-29T20:00:10Z" },
+      { "from": "customer", "text": "uma batata grande e uma coca", "at": "2026-08-29T20:01:00Z" },
+      { "from": "store", "text": "Fechou. É pra entrega ou retirada?", "at": "2026-08-29T20:01:20Z" },
+      { "from": "customer", "text": "entrega na Rua das Acácias, 42. pago no pix", "at": "2026-08-29T20:02:00Z" }
+    ],
     "expectedCheckout": {
       "products": [
         { "productId": "batata", "quantity": 1, "chosen": [{ "choiceId": "g" }] },
         { "productId": "refri", "quantity": 1, "chosen": [{ "choiceId": "coca" }] }
       ],
-      "totalPrice": 31
+      "totalPrice": 31,
+      "address": { "text": "Rua das Acácias, 42" },
+      "payment": { "method": "pix" }
     }
   },
   {
     "useCase": "escalação (não é pra Brenda resolver)",
     "messages": [{ "from": "customer", "text": "quero falar com o dono, tenho uma reclamação" }],
     "expectEscalation": true
-  },
-  {
-    "useCase": "conversa longa (estado final + endereço + pagamento)",
-    "messages": [
-      { "from": "customer", "text": "boa noite", "at": "2026-08-30T20:01:00Z" },
-      { "from": "store", "text": "Boa noite! O que vai ser?", "at": "2026-08-30T20:01:10Z" },
-      { "from": "customer", "text": "um x-bacon e uma coca", "at": "2026-08-30T20:02:00Z" },
-      { "from": "store", "text": "Fechou. Mais alguma coisa?", "at": "2026-08-30T20:02:20Z" },
-      { "from": "customer", "text": "ah, troca o x-bacon por um x-tudo", "at": "2026-08-30T20:03:00Z" },
-      { "from": "customer", "text": "manda pra Rua das Flores 100. pago no pix", "at": "2026-08-30T20:03:30Z" }
-    ],
-    "expectedCheckout": {
-      "products": [
-        { "productId": "x-tudo", "quantity": 1 },
-        { "productId": "refri", "quantity": 1, "chosen": [{ "choiceId": "coca" }] }
-      ],
-      "address": { "text": "Rua das Flores 100" },
-      "payment": { "method": "pix" }
-    }
   },
   {
     "useCase": "endereço salvo (referência por apelido)",
