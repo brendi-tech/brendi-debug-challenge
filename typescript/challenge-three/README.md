@@ -28,13 +28,19 @@ do restaurante** quando não é pra Brenda resolver (ver abaixo). **Como você o
 o pipeline por dentro é decisão sua** — o que delega pra LLM, o que garante em
 código, como valida e precifica. O stub está em `src/handleConversation.ts`.
 
+O pedido completo inclui **endereço** e **forma de pagamento** (`Checkout.address`,
+`Checkout.payment`). E o input pode trazer **contexto do cliente**
+(`Conversation.customer`: endereços salvos, último pedido) — o cliente pode dizer
+"manda pra casa" ou "manda o de sempre". A conversa tem os dois lados (`customer` /
+`store`) e pode ser longa.
+
 Ela é servida por uma **API HTTP** (`src/app.ts`, Express) — é assim que o harness
 bate nela, como na Brenda real:
 
 | Rota | O quê |
 |---|---|
 | `GET /` | vem pronto — responde `{ ok: true }` quando o server sobe |
-| `POST /orders` | body `{ messages }` → devolve o `Result` (vem ligado ao `handleConversation`) |
+| `POST /orders` | body `{ messages, customer? }` → devolve o `Result` (vem ligado ao `handleConversation`) |
 | `POST /owner/notify` | **você cria** — recebe a escalação pro dono |
 
 Não tem roteiro: **os testes são a especificação.** Faça-os passar e maximize a

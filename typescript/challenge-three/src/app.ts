@@ -3,7 +3,6 @@ import express from "express";
 import { loadMenu } from "./menu";
 import { createLLM } from "./llm";
 import { handleConversation } from "./handleConversation";
-import type { Message } from "./types";
 
 const app = express();
 app.use(express.json());
@@ -18,8 +17,8 @@ app.get("/", (_req, res) => {
 
 app.post("/orders", async (req, res) => {
   try {
-    const messages = (req.body?.messages ?? []) as Message[];
-    const result = await handleConversation({ storeId: menu.storeId, messages }, menu, llm);
+    const { messages = [], customer } = req.body ?? {};
+    const result = await handleConversation({ storeId: menu.storeId, messages, customer }, menu, llm);
     res.json(result);
   } catch (e: any) {
     res.status(500).json({ error: e?.message ?? "erro" });

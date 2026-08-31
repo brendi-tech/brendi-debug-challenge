@@ -61,5 +61,29 @@ export function compareCheckout(expected: Checkout, actual: Checkout): Compariso
     );
   }
 
+  if (expected.address) {
+    for (const k of ["label", "text"] as const) {
+      if (expected.address[k] === undefined) continue;
+      const got = actual.address?.[k];
+      details.push(
+        got === expected.address[k]
+          ? { path: `address.${k}`, status: "pass" }
+          : { path: `address.${k}`, status: "fail", message: `esperado ${JSON.stringify(expected.address[k])}, veio ${JSON.stringify(got)}` }
+      );
+    }
+  }
+
+  if (expected.payment) {
+    for (const k of ["method", "changeFor"] as const) {
+      if (expected.payment[k] === undefined) continue;
+      const got = actual.payment?.[k];
+      details.push(
+        got === expected.payment[k]
+          ? { path: `payment.${k}`, status: "pass" }
+          : { path: `payment.${k}`, status: "fail", message: `esperado ${JSON.stringify(expected.payment[k])}, veio ${JSON.stringify(got)}` }
+      );
+    }
+  }
+
   return { passed: details.every((d) => d.status === "pass"), details };
 }

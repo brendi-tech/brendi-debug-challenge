@@ -53,5 +53,64 @@
     "useCase": "escalação (não é pra Brenda resolver)",
     "messages": [{ "from": "customer", "text": "quero falar com o dono, tenho uma reclamação" }],
     "expectEscalation": true
+  },
+  {
+    "useCase": "conversa longa (estado final + endereço + pagamento)",
+    "messages": [
+      { "from": "customer", "text": "boa noite", "at": "2026-08-30T20:01:00Z" },
+      { "from": "store", "text": "Boa noite! O que vai ser?", "at": "2026-08-30T20:01:10Z" },
+      { "from": "customer", "text": "um x-bacon e uma coca", "at": "2026-08-30T20:02:00Z" },
+      { "from": "store", "text": "Fechou. Mais alguma coisa?", "at": "2026-08-30T20:02:20Z" },
+      { "from": "customer", "text": "ah, troca o x-bacon por um x-tudo", "at": "2026-08-30T20:03:00Z" },
+      { "from": "customer", "text": "manda pra Rua das Flores 100. pago no pix", "at": "2026-08-30T20:03:30Z" }
+    ],
+    "expectedCheckout": {
+      "products": [
+        { "productId": "x-tudo", "quantity": 1 },
+        { "productId": "refri", "quantity": 1, "chosen": [{ "choiceId": "coca" }] }
+      ],
+      "address": { "text": "Rua das Flores 100" },
+      "payment": { "method": "pix" }
+    }
+  },
+  {
+    "useCase": "endereço salvo (referência por apelido)",
+    "customer": {
+      "addresses": [
+        { "label": "casa", "text": "Rua A, 10 - Centro" },
+        { "label": "trabalho", "text": "Av B, 200 - sala 5" }
+      ]
+    },
+    "messages": [{ "from": "customer", "text": "um x-salada, manda pra casa" }],
+    "expectedCheckout": {
+      "products": [{ "productId": "x-salada", "quantity": 1 }],
+      "address": { "label": "casa", "text": "Rua A, 10 - Centro" }
+    }
+  },
+  {
+    "useCase": "pagamento em dinheiro com troco",
+    "messages": [{ "from": "customer", "text": "quero um x-tudo, vou pagar em dinheiro, troco pra 100" }],
+    "expectedCheckout": {
+      "products": [{ "productId": "x-tudo", "quantity": 1 }],
+      "payment": { "method": "dinheiro", "changeFor": 100 }
+    }
+  },
+  {
+    "useCase": "reaproveitar o último pedido",
+    "customer": {
+      "lastOrder": {
+        "products": [
+          { "productId": "x-bacon", "quantity": 1 },
+          { "productId": "batata", "quantity": 1, "chosen": [{ "choiceId": "g" }] }
+        ]
+      }
+    },
+    "messages": [{ "from": "customer", "text": "manda o de sempre" }],
+    "expectedCheckout": {
+      "products": [
+        { "productId": "x-bacon", "quantity": 1 },
+        { "productId": "batata", "quantity": 1, "chosen": [{ "choiceId": "g" }] }
+      ]
+    }
   }
 ]
