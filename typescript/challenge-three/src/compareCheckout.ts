@@ -61,16 +61,23 @@ export function compareCheckout(expected: Checkout, actual: Checkout): Compariso
     );
   }
 
-  if (expected.address) {
-    for (const k of ["label", "text"] as const) {
-      if (expected.address[k] === undefined) continue;
-      const got = actual.address?.[k];
-      details.push(
-        got === expected.address[k]
-          ? { path: `address.${k}`, status: "pass" }
-          : { path: `address.${k}`, status: "fail", message: `esperado ${JSON.stringify(expected.address[k])}, veio ${JSON.stringify(got)}` }
-      );
-    }
+  if (expected.address?.label !== undefined) {
+    const got = actual.address?.label;
+    details.push(
+      got === expected.address.label
+        ? { path: "address.label", status: "pass" }
+        : { path: "address.label", status: "fail", message: `esperado ${JSON.stringify(expected.address.label)}, veio ${JSON.stringify(got)}` }
+    );
+  }
+  if (expected.address?.text !== undefined) {
+    // endereço é texto livre: normaliza (pontuação/caixa/espaços) e checa se contém.
+    const norm = (s: unknown) => String(s ?? "").toLowerCase().replace(/[.,\-\/]/g, " ").replace(/\s+/g, " ").trim();
+    const got = actual.address?.text;
+    details.push(
+      norm(got).includes(norm(expected.address.text))
+        ? { path: "address.text", status: "pass" }
+        : { path: "address.text", status: "fail", message: `esperado conter ${JSON.stringify(expected.address.text)}, veio ${JSON.stringify(got)}` }
+    );
   }
 
   if (expected.payment) {
