@@ -31,8 +31,13 @@ código, como valida e precifica. O stub está em `src/handleConversation.ts`.
 O pedido completo inclui **endereço** e **forma de pagamento** (`Checkout.address`,
 `Checkout.payment`). E o input pode trazer **contexto do cliente**
 (`Conversation.customer`: endereços salvos, último pedido) — o cliente pode dizer
-"manda pra casa" ou "manda o de sempre". A conversa tem os dois lados (`customer` /
-`store`) e pode ser longa.
+"manda pra casa" ou "manda o de sempre".
+
+A conversa tem os **dois lados** (`customer` / `store`), com timestamps, e é **longa
+por padrão**: pode carregar histórico antigo (mensagens de sessões passadas do mesmo
+cliente, pedidos já entregues, conversa fiada) — às vezes mais do que cabe na janela
+de contexto do modelo. O pedido certo é o **atual**; o histórico é ruído a ser
+tratado, não re-processado.
 
 Ela é servida por uma **API HTTP** (`src/app.ts`, Express) — é assim que o harness
 bate nela, como na Brenda real:
