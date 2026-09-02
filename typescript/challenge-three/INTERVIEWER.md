@@ -158,8 +158,33 @@ tudo, trava no próprio repo), testa o design de base, execução ao vivo e dom�
 Se o `src/` está bem estruturado, a extensão encaixa limpa; se é monólito, ele
 remenda — e isso é sinal.
 
-**IA no live:** liberada (é o job). Observe **como** ele usa. Pra sinal cru de
-fundamento, peça pra explicar uma parte **sem** o agente.
+## IA no live: como ele usa
+
+Liberada — é o job. **Não conta *se* usa nem *quanto*; conta se o entendimento e a
+autoria são dele.** A distinção-mãe: ele **dirige** a IA (segura o design e a régua de
+correção, usa como mão rápida) ou **delega** (terceiriza o pensamento e só repassa)?
+Tudo abaixo é sintoma disso — observe enquanto ele estende o próprio código:
+
+- **Lê e verifica o output** *(o sinal nº 1).* 🟢 lê / roda / questiona antes de
+  aceitar. 🔴 cola-e-reza.
+- **Pega os erros da IA.** 🟢 percebe alucinação / over-engineer e **empurra de volta**
+  ("não, isso quebra porque…"). 🔴 só nota quando o teste falha. *(Só pega o erro da IA
+  quem entende o problema — o tell mais afiado.)*
+- **Dirige vs despeja.** 🟢 decompõe e direciona em pedaços que já raciocinou; **ele**
+  segura a arquitetura. 🔴 cola a tarefa inteira e deixa a IA arquitetar.
+- **Recupera quando a IA trava.** 🟢 assume o volante (lê, raciocina, conserta na mão).
+  🔴 re-prompta "não funciona" em loop esperando a IA se salvar.
+- **Sabe quando NÃO usar IA.** 🟢 mudança pequena/clara, só digita. 🔴 pede pra IA até o
+  trivial — dependência reflexa.
+- **Qualidade do prompt.** 🟢 dá contexto + restrições + a forma que quer. 🔴 joga o erro
+  cru e torce.
+- **Integra vs empilha.** 🟢 adapta o output ao estilo/estrutura dele. 🔴 cola como veio
+  (AI-slop: estilo inconsistente, código morto, abstração demais).
+- **Explica sem o agente.** Peça pra explicar/mexer numa parte com o agente desligado.
+  🟢 defende cada linha. 🔴 "a IA que fez, funciona" e trava quando você aponta.
+
+Calibração: um sênior pode usar IA o tempo todo e continuar sendo claramente o **dono**;
+um fraco usa igual e a **IA é a dona**.
 
 ## Banco de extensões (ao-vivo)
 
