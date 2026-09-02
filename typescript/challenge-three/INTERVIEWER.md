@@ -1,4 +1,4 @@
-# Interno — como avaliar o challenge-three (pleno)
+# Interno — como avaliar o challenge-three (Conversational AI SWE)
 
 > **Não mandar este arquivo pro candidato.** (Remova/ignore no que ele recebe.)
 >
@@ -9,6 +9,31 @@
 > o sinal. Não re-vaze a rubrica no README. Uma solução que acerta todos os pontos
 > mas **não se sustenta no walkthrough** (não explica o *porquê*, trava ao estender)
 > é AI-shaped: o ao-vivo é o filtro.
+
+## Como rodar o processo
+
+O take-home é **IA-trivial** → não é o filtro, é o **artefato pra interrogar**. O
+sinal mora no ao-vivo.
+
+1. **Take-home** (async, IA liberada, ~1-2h) — core: montar/clarificar + guardrails +
+   precisão. Ele chega **dono de um código que entende**. Não discrimina sozinho.
+2. **Auditoria** (antes da live, ~15min) — lê o código + `SOLUTION.md`, chega com 2-3
+   perguntas cravadas (ver *Pré-entrevista* abaixo).
+3. **Live** (~60-90min):
+   - **Walkthrough** — sonda *por quê / alternativa / predição*.
+   - **1 extensão** no próprio código — do *Banco de extensões*, parte com o agente desligado.
+   - **System design (whiteboard)** — o macro (ver seção no fim).
+
+| Peça | Mede |
+|---|---|
+| Take-home | produz o artefato |
+| Auditoria + walkthrough | entende o que shippou? (anti-vibe-coder) |
+| Extensão live | a estrutura dele aguenta? (anti-ghostwriter) |
+| System design | pensa concorrência/escala? (à prova de IA) |
+
+**Regras de ouro:** não telegrafe o split (os testes forçam sem dizer) · piso ≠ alvo
+(o sinal é o **grau** + as dores específicas) · gradua a **jornada e o raciocínio**,
+não a conclusão · IA é o job — teste se ele **entende e é dono**.
 
 ## Distribuição pro candidato (zip)
 
@@ -180,3 +205,41 @@ raso de bom).
 - Mão: *"Faz o pipeline aguentar isso."*
 - Gotcha: *"Como você decide o que cortar sem perder o pedido atual? Cortar basta, ou você resumiria?"*
 - 🟢 windowing por recência / resumo do histórico velho; entende que é ruído. 🔴 manda a conversa inteira e estoura.
+
+## System design (whiteboard)
+
+Apartado do coding. É o **macro** (o pipeline inteiro), e ao vivo é **à prova de IA**.
+Pergunta aberta: *"como você modelaria o sistema onde um cliente conversa no WhatsApp
+e um agente responde?"* Deixa desenhar o happy-path e **fura com cenários**.
+
+**Como rodar:** whiteboard baixa-fricção (Excalidraw, link pré-criado só com "cliente"
+e "loja" nas pontas). É andaime de raciocínio, não entregável — gradua o *porquê*, não
+o desenho.
+
+**Baseline (piso — competente, não impressiona):**
+- Happy-path: provider → webhook → grava a conversa (banco) → processa com a LLM →
+  envia a resposta.
+- Cita banco de conversas/mensagens, uma fila entre ingestão e processamento, endpoints
+  (entrada/saída), config/menu por loja.
+- Entende que o webhook é assíncrono do processamento.
+
+**Bom preparo (o que separa — chega nisto sozinho):**
+- **Fronteira sync/async explícita:** o webhook dá ACK rápido (timeout do provider) e
+  enfileira; a LLM processa async. Sabe *por quê* (LLM lenta vs timeout).
+- **Ordenação/serialização por conversa:** mensagens da mesma conversa não podem correr
+  — partição/lock por `conversationId`. Fora-de-ordem e concorrência quebram o estado.
+- **Idempotência + dedup:** webhook re-entregue não processa/responde 2×.
+- **Debounce/batching:** junta mensagens rápidas do mesmo cliente antes de chamar a LLM.
+- **Estado/janela em escala:** como guarda histórico grande e o que alimenta a LLM
+  (recência/resumo) — é o context-window do coding, agora em nível de sistema.
+- **Human-in-the-loop / coexistência:** um humano assume, o agente cala.
+- **Falha + custo:** LLM/provider caem (retry, DLQ, replay); nº de calls por mensagem, cache.
+- **Multi-tenant:** isolamento + prompt/menu/config por loja.
+
+**Cenários pra furar** (aponte no desenho): 2 mensagens ao mesmo tempo na mesma conversa
+· o provider re-entregou o webhook · a LLM levou 8s e o cliente mandou +2 · um humano
+quer assumir · 10 mil lojas.
+
+- 🟢 chega em **ordenação/concorrência + sync-async + idempotência sem você apontar**,
+  raciocina tradeoff, marca a fronteira e os pontos de falha.
+- 🔴 fica no "DB + fila + API", trata a LLM como síncrona, trava quando você injeta um cenário.
