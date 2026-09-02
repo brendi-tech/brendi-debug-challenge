@@ -1,0 +1,6 @@
+# Arquivos internos — NÃO exportam pro candidato.
+# `git archive` respeita export-ignore; o zip do candidato sai por ele
+# (ver INTERVIEWER.md → "Distribuição pro candidato").
+INTERVIEWER.md export-ignore
+SOLUTION.md export-ignore
+.gitattributes export-ignore
