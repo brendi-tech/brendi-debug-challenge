@@ -1,5 +1,3 @@
-import { logLLM } from "./lib/observability";
-
 export type ChatOptions = {
   system: string;
   user: string;
@@ -26,7 +24,6 @@ class OpenAILLM implements LLM {
     this.model = process.env.BRENDA_MODEL || "gpt-4o-mini";
   }
   async chat(opts: ChatOptions): Promise<string> {
-    const t0 = Date.now();
     const res = await this.client.chat.completions.create({
       model: this.model,
       temperature: opts.temperature ?? 0,
@@ -35,14 +32,6 @@ class OpenAILLM implements LLM {
         { role: "user", content: opts.user },
       ],
       ...(opts.jsonSchemaHint ? { response_format: { type: "json_object" } } : {}),
-    });
-    const u = res.usage ?? {};
-    logLLM("llm", {
-      model: this.model,
-      prompt_tokens: u.prompt_tokens,
-      completion_tokens: u.completion_tokens,
-      total_tokens: u.total_tokens,
-      ms: Date.now() - t0,
     });
     return res.choices[0]?.message?.content ?? "";
   }

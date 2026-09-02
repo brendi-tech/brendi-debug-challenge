@@ -1,6 +1,10 @@
-# SOLUTION — solução de referência
+# SOLUTION — solução de referência (core)
 
 > Gabarito interno. Não faz parte do que o candidato recebe.
+>
+> Este é o **core** do take-home. As extensões (endereço, pagamento, último pedido,
+> escalação+webhook, observabilidade) saíram de propósito para o ao-vivo — ver o
+> banco de extensões no `INTERVIEWER.md`.
 
 ## Decisão central: separar probabilístico de determinístico
 
@@ -34,34 +38,8 @@ LLM não-determinística no meio. Os `behaviour.test.ts` injetam uma LLM control
   de cliente antigo carrega histórico de sessões passadas (pedidos já entregues,
   conversa fiada) e estoura a janela do modelo; o pedido atual está no fim. Em
   escala: resumir o histórico velho em vez de simplesmente cortar.
-- **Endereço/último pedido: referência resolvida em CÓDIGO, não pela LLM.** A LLM só
-  diz *qual* apelido salvo o cliente citou ("casa") ou que é pra repetir o último;
-  quem copia o `text` do endereço salvo e os produtos do `lastOrder` é o
-  `interpret` (determinístico). Assim "manda pra casa" nunca vira um endereço
-  alucinado, e "o de sempre" é exatamente o pedido anterior.
-- **Pagamento é guardrail determinístico:** `priceCheckout` recusa método fora de
-  `acceptedPayments` e `changeFor < total` (troco só em dinheiro). A LLM extrai; o
-  código garante — igual ao preço.
-- **Observabilidade da call:** um sink único (`lib/observability.ts`) manda cada
-  evento pra **stderr** (visão ao vivo, sem sujar o pedido no stdout) **e** appenda
-  num **arquivo JSONL separado** (`llm-calls.jsonl`, um evento por linha) pra
-  investigar uma call depois. Registro tokens + latência (`llm`) e um `reasoning`
-  de 1 frase do modelo (`interpret`). O `reasoning` vem primeiro no JSON, então
-  funciona como um chain-of-thought curto que ainda ajuda a decisão. Falha de I/O
-  do log é engolida de propósito — o rastro nunca pode derrubar o pedido.
-- **Escalar pro dono (3ª saída):** a `interpret` sinaliza `escalate` quando não é
-  pra Brenda resolver (quer uma pessoa, reclamação, fora do cardápio) — distinto de
-  `clarification` (pergunta que o cliente responde). Aí `handleConversation` chama
-  `notifyOwner`, um POST simples pro webhook do dono (adicionei a rota
-  `POST /owner/notify` no `app.ts`), e devolve `{ ok:false, escalated:true }`. A
-  call é fail-safe: se o webhook cai, a gente loga e segue — nunca derruba o
-  atendimento. URL vem de `OWNER_WEBHOOK_URL` (default `localhost:5052`).
 
 ## Em escala (o que eu faria com mais tempo / volume)
-
-- **Webhook do dono confiável:** hoje é fire-and-forget. Em produção: retry com
-  backoff + fila (a notificação não pode se perder), idempotência por conversa, e
-  auth no webhook (token/HMAC).
 
 - **Medir precisão como métrica viva**, não só no dev: precisão por campo
   (produto, adicional, quantidade) em produção, não só um número agregado — pra
@@ -88,8 +66,8 @@ LLM não-determinística no meio. Os `behaviour.test.ts` injetam uma LLM control
 ## Como validar
 
 ```bash
-npm test           # 12/12 verde — núcleo determinístico + escalação (in-process)
-npm start          # sobe a API (/health, /orders, /owner/notify) em :5052
+npm test           # 10/10 verde — núcleo determinístico (in-process)
+npm start          # sobe a API (/, /orders) em :5052
 npm run test:api   # noutro terminal, com o server no ar + OPENAI_API_KEY: bate por HTTP
 ```
 

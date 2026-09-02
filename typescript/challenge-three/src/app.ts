@@ -17,18 +17,12 @@ app.get("/", (_req, res) => {
 
 app.post("/orders", async (req, res) => {
   try {
-    const { messages = [], customer } = req.body ?? {};
-    const result = await handleConversation({ storeId: menu.storeId, messages, customer }, menu, llm);
+    const { messages = [] } = req.body ?? {};
+    const result = await handleConversation({ storeId: menu.storeId, messages }, menu, llm);
     res.json(result);
   } catch (e: any) {
     res.status(500).json({ error: e?.message ?? "erro" });
   }
-});
-
-// Recebe a escalação da Brenda (é o "dono"); o pipeline chama isto via notifyOwner.
-app.post("/owner/notify", (req, res) => {
-  console.log("[owner] escalação recebida:", req.body);
-  res.json({ received: true });
 });
 
 const PORT = Number(process.env.PORT || 5052);
