@@ -73,9 +73,41 @@ O `SOLUTION.md` (a seção "em escala") é onde o pleno aparece. Repare também 
 
 - **incluso vs extra (marmita):** o separador. Cobrar 1 carne extra, não virar 2
   marmitas (custom `carne-marmita`, `includedQuantity: 1`).
-- **ambiguidade ("hambúrguer com bacon"):** pedir clarificação, não alucinar
-  (X-Bacon vs X-Salada+bacon). Guardrail contra "mil pizzas por R$0".
+- **ambiguidade ("me vê um hambúrguer"):** 3 lanches batem igual → pedir
+  clarificação, não chutar. Guardrail contra "mil pizzas por R$0".
+- **histórico antigo (sessão passada):** o pedido certo é o atual, não o já entregue.
 - **obrigatório + 2 produtos, mudança de ideia, adicionais:** realidade da conversa.
+
+## Pré-entrevista: auditar a entrega (chegue com as perguntas prontas)
+
+O take-home é async e **IA liberada** — então o artefato, por si, é **~zero sinal**
+(uma IA resolve o core inteiro; ver dogfood). O valor está em **auditar antes** e
+chegar na live com **perguntas cravadas no código DELE**, não genéricas. A auditoria
+é o que transforma o artefato na munição da entrevista.
+
+**Rode este checklist na entrega (15 min lendo o código + `SOLUTION.md`):**
+
+- Achou a **separação LLM×determinístico**? Onde? (interpret só *propõe* ids; o código
+  *valida e precifica*.) É o sinal central.
+- **Preço sempre do menu?** Guardrails presentes (produto inexistente/inativo,
+  obrigatórios, min/max, incluso-vs-extra)?
+- **🚩 Red flags:** regra de negócio no prompt; confia em preço/produto vindo da LLM;
+  tudo numa função só; guardrails ausentes; ambiguidade vira chute.
+- **`SOLUTION.md` "em escala":** tem tradeoff real (retrieval, medir precisão, custo)
+  ou é genérico/decorado?
+- **🚩 Tell de AI-slop:** abstração sofisticada demais pro nível declarado, código
+  morto, comentário que não bate com o código, estilo inconsistente (copiou sem
+  entender).
+
+**Transforme os achados em 2–3 perguntas marcadas (leve prontas):**
+
+- Aponte uma **decisão/linha específica** → *"por que assim, e não X?"*
+- Ache um **edge que os testes NÃO cobrem** e veja se o código dele trata → *"o que
+  acontece se…?"*
+- **Sophistication-gap:** se o código é mais sofisticado do que o walkthrough dele
+  consegue explicar, é o **tell mais forte** de "a IA fez, ele não entende". Cave aí.
+- **Já escolha qual extensão** dar na live (do banco abaixo), baseado em onde a
+  estrutura dele é fraca/forte — e qual parte pedir com o **agente desligado**.
 
 ## Live coding = estender o PRÓPRIO take-home
 
