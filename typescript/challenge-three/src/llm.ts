@@ -16,9 +16,7 @@ class OpenAILLM implements LLM {
     const OpenAI = require("openai").default ?? require("openai");
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      throw new Error(
-        "OPENAI_API_KEY ausente. Peça a chave ao entrevistador, copie .env.example para .env, ou use createLLM({ mock: true })."
-      );
+      throw new Error("OPENAI_API_KEY ausente. Peça a chave ao entrevistador e copie .env.example para .env.");
     }
     this.client = new OpenAI({ apiKey });
     this.model = process.env.BRENDA_MODEL || "gpt-4o-mini";
@@ -37,22 +35,12 @@ class OpenAILLM implements LLM {
   }
 }
 
-class MockLLM implements LLM {
-  async chat(opts: ChatOptions): Promise<string> {
-    const t = opts.user.toLowerCase();
-    const products: any[] = [];
-    if (t.includes("x-tudo") || t.includes("x tudo")) products.push({ productId: "x-tudo", quantity: 1 });
-    if (t.includes("x-salada") || t.includes("x salada")) products.push({ productId: "x-salada", quantity: 1 });
-    if (products.length === 0) products.push({ productId: "x-salada", quantity: 1 });
-    return JSON.stringify({ products });
-  }
+export function createLLM(): LLM {
+  return new OpenAILLM();
 }
 
-export function createLLM(opts?: { mock?: boolean }): LLM {
-  return opts?.mock ? new MockLLM() : new OpenAILLM();
-}
-
-// LLM de teste: ignora o prompt e sempre devolve `output`.
+// LLM de teste: ignora o prompt e sempre devolve `output`. É o que o `npm test`
+// usa pra ser determinístico (sem chave, sem server).
 export function makeFakeLLM(output: unknown): LLM {
   const s = typeof output === "string" ? output : JSON.stringify(output);
   return { chat: async () => s };
