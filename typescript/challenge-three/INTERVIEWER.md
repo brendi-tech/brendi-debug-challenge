@@ -103,3 +103,48 @@ remenda — e isso é sinal.
 
 **IA no live:** liberada (é o job). Observe **como** ele usa. Pra sinal cru de
 fundamento, peça pra explicar uma parte **sem** o agente.
+
+## Banco de extensões (ao-vivo)
+
+Estas dimensões **saíram do take-home de propósito** — o dogfood mostrou que a IA
+resolve todas trivialmente, então no take-home elas só inflam o box sem discriminar.
+Aqui elas viram **extensões ao-vivo do próprio código do candidato**, que é onde o
+filtro anti-vibe-coder morde. Escolha 1–2 conforme o candidato/vaga, não crave todas.
+Formato: **abre** (verbal) → **mão** (faz no próprio código) → **gotcha** (separa
+raso de bom).
+
+**🏠 Endereço**
+- Abre: *"Agora o cliente precisa dizer onde entregar. Como você encaixaria endereço no que já tem?"*
+- Mão: *"Ele tem endereços salvos (`casa`, `trabalho`) e diz 'manda pra casa'. Como vira o endereço do pedido? Bora codar."*
+- Gotcha: *"E se ele ditar um endereço novo no chat? E se falar 'manda pra casa' sem ter 'casa' salvo?"*
+- 🟢 LLM só identifica QUAL apelido; o código copia o texto salvo. 🔴 deixa a LLM inventar o endereço.
+
+**💳 Pagamento**
+- Abre: *"Como você trataria forma de pagamento — pix, dinheiro, cartão?"*
+- Mão: *"O cliente diz 'dinheiro, troco pra 50'. Modela isso no checkout."*
+- Gotcha: *"A loja só aceita pix e dinheiro, e ele pede débito — o que seu código faz? E se o troco for menor que o total?"*
+- 🟢 LLM extrai, código valida (método aceito, troco ≥ total) — igual ao preço. 🔴 confia no que a LLM mandou / inventa "pague online".
+
+**🔁 Reaproveitar último pedido**
+- Abre: *"Cliente recorrente manda 'quero o de sempre'. Como você resolveria?"*
+- Mão: *"Assume que você recebe o último pedido dele no input. Reconstrói o checkout a partir dele."*
+- Gotcha: *"E se não tiver último pedido? E se for 'o de sempre, mas sem cebola' — repetição + edição junto?"*
+- 🟢 copia o lastOrder em código; LLM só sinaliza a intenção. 🔴 LLM remontando o pedido de memória.
+
+**🔭 Observabilidade**
+- Abre: *"Você shippou, e amanhã um pedido sai errado em produção. Como você descobre o porquê?"*
+- Mão: *"Bora instrumentar uma chamada de LLM — o que você logaria?"*
+- Gotcha: *"Como você mediria PRECISÃO em produção, não só num teste? E em escala, o volume de log não vira problema?"*
+- 🟢 loga entrada + decisão do modelo + tokens/latência, persiste, pensa em precisão-por-campo. 🔴 `console.log` e para aí.
+
+**📞 Escalação + webhook do dono**
+- Abre: *"Nem tudo é pedido — o cliente quer falar com uma pessoa, ou reclama. Como a Brenda lida?"*
+- Mão: *"Faz ela avisar o dono por HTTP quando escalar: sobe um endpoint que recebe, e faz a chamada."*
+- Gotcha: *"E se o webhook do dono cair? E se você notificar duas vezes pra mesma conversa?"*
+- 🟢 escalar ≠ clarificar; call fail-safe (não derruba o atendimento); idempotência/retry. 🔴 a call quebrada derruba o pedido.
+
+**🪟 Janela de contexto**
+- Abre: *"Esse cliente é dos antigos — a conversa tem milhares de mensagens. O que acontece com seu prompt?"*
+- Mão: *"Faz o pipeline aguentar isso."*
+- Gotcha: *"Como você decide o que cortar sem perder o pedido atual? Cortar basta, ou você resumiria?"*
+- 🟢 windowing por recência / resumo do histórico velho; entende que é ruído. 🔴 manda a conversa inteira e estoura.

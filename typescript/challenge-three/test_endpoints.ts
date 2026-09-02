@@ -11,7 +11,7 @@
 import "dotenv/config";
 import http from "http";
 import { compareCheckout } from "./src/compareCheckout";
-import type { Checkout, Message, CustomerContext } from "./src/types";
+import type { Checkout, Message } from "./src/types";
 import cases from "./cases.json";
 
 const BASE = process.env.BASE_URL || "http://localhost:5052";
@@ -20,10 +20,8 @@ const G = "\x1b[92m", R = "\x1b[91m", B = "\x1b[1m", X = "\x1b[0m";
 type Case = {
   useCase: string;
   messages: Message[];
-  customer?: CustomerContext;
   expectedCheckout?: Checkout;
   expectClarification?: boolean;
-  expectEscalation?: boolean;
 };
 
 function request(method: string, path: string, body?: unknown): Promise<{ status: number | null; data: any; error: string | null }> {
@@ -57,28 +55,26 @@ async function main() {
     process.exit(1);
   }
 
-  let pass = 0, fail = 0;
-  const ok = (label: string, cond: boolean, info = "") => {
-    console.log(`  ${cond ? G + "PASS" : R + "FAIL"}${X}  ${label.padEnd(34)} ${info}`);
-    cond ? pass++ : fail++;
-  };
+  // Só coisa QUEBRADA derruba o processo (endpoint fora, /orders com erro/500).
+  // Precisão é NOTA — miss não falha o processo (a LLM não é determinística).
+  let hardFail = false;
 
-  console.log(`\n${B}Endpoints${X}`);
-  ok("GET /", up.status === 200 && up.data?.ok === true);
-  const notify = await request("POST", "/owner/notify", { storeId: "x", reason: "teste", messages: [] });
-  ok("POST /owner/notify", notify.status === 200 && notify.data?.received === true);
+  console.log(`\n${B}Endpoint${X}`);
+  const upOk = up.status === 200 && up.data?.ok === true;
+  console.log(`  ${upOk ? G + "PASS" : R + "FAIL"}${X}  GET /`);
+  if (!upOk) hardFail = true;
 
-  console.log(`\n${B}POST /orders — ${(cases as Case[]).length} casos${X}`);
+  console.log(`\n${B}POST /orders — ${(cases as Case[]).length} casos (precisão = nota)${X}`);
   let hit = 0;
   for (const c of cases as Case[]) {
-    const { status, data, error } = await request("POST", "/orders", { messages: c.messages, customer: c.customer });
-    let good = false, info = "";
+    const { status, data, error } = await request("POST", "/orders", { messages: c.messages });
     if (error || status !== 200) {
-      info = error ?? `HTTP ${status}`;
-    } else if (c.expectEscalation) {
-      good = data?.ok === false && data?.escalated === true;
-      info = good ? "escalou" : `esperava escalar, veio ${JSON.stringify(data)}`;
-    } else if (c.expectClarification) {
+      console.log(`  ${R}ERRO${X}  ${c.useCase.padEnd(38)} ${error ?? `HTTP ${status}`}`);
+      hardFail = true;
+      continue;
+    }
+    let good = false, info = "";
+    if (c.expectClarification) {
       good = data?.ok === false && !!data?.clarification;
       info = good ? "clarificou" : `esperava clarificação, veio ${JSON.stringify(data)}`;
     } else if (data?.ok) {
@@ -89,12 +85,12 @@ async function main() {
       info = `recusou: ${data?.clarification ?? data?.reason}`;
     }
     if (good) hit++;
-    ok(c.useCase, good, info);
+    console.log(`  ${good ? G + "ok  " : R + "miss"}${X}  ${c.useCase.padEnd(38)} ${info}`);
   }
 
-  const total = pass + fail;
-  console.log(`\n${B}${pass}/${total} checks · precisão /orders ${hit}/${(cases as Case[]).length}${X}\n`);
-  if (fail > 0) process.exit(1);
+  const n = (cases as Case[]).length;
+  console.log(`\n${B}precisão /orders ${hit}/${n}${X}${hardFail ? `  ${R}(endpoint/erro falhou)${X}` : ""}\n`);
+  if (hardFail) process.exit(1);
 }
 
 main();

@@ -23,15 +23,9 @@ handleConversation(conversation, menu, llm): Promise<Result>
 ```
 
 Ela recebe a conversa e o cardápio e devolve o pedido montado (um `Checkout` com
-`totalPrice`), ou uma recusa quando for inválido / ambíguo — ou **escala pro dono
-do restaurante** quando não é pra Brenda resolver (ver abaixo). **Como você organiza
-o pipeline por dentro é decisão sua** — o que delega pra LLM, o que garante em
-código, como valida e precifica. O stub está em `src/handleConversation.ts`.
-
-O pedido completo inclui **endereço** e **forma de pagamento** (`Checkout.address`,
-`Checkout.payment`). E o input pode trazer **contexto do cliente**
-(`Conversation.customer`: endereços salvos, último pedido) — o cliente pode dizer
-"manda pra casa" ou "manda o de sempre".
+`totalPrice`), ou uma recusa quando for inválido / ambíguo. **Como você organiza o
+pipeline por dentro é decisão sua** — o que delega pra LLM, o que garante em código,
+como valida e precifica. O stub está em `src/handleConversation.ts`.
 
 A conversa tem os **dois lados** (`customer` / `store`), com timestamps, e é **longa
 por padrão**: pode carregar histórico antigo (mensagens de sessões passadas do mesmo
@@ -45,8 +39,7 @@ bate nela, como na Brenda real:
 | Rota | O quê |
 |---|---|
 | `GET /` | vem pronto — responde `{ ok: true }` quando o server sobe |
-| `POST /orders` | body `{ messages, customer? }` → devolve o `Result` (vem ligado ao `handleConversation`) |
-| `POST /owner/notify` | **você cria** — recebe a escalação pro dono |
+| `POST /orders` | body `{ messages }` → devolve o `Result` (vem ligado ao `handleConversation`) |
 
 Não tem roteiro: **os testes são a especificação.** Faça-os passar e maximize a
 precisão.
@@ -76,20 +69,8 @@ npm run test:api
 Por que dois: `npm test` roda a lógica com uma **LLM de teste** (`makeFakeLLM`), então
 é determinístico, grátis e instantâneo — dá pra testar até o que a LLM real nunca
 faria de propósito (produto inválido, etc.). `npm run test:api` usa a **LLM de
-verdade** contra o server no ar: a precisão do `/orders` é uma **nota** (maximize), o
-resto (`/`, `/owner/notify`) é pass/fail.
-
-## Requisitos
-
-Além de fazer os testes passarem:
-
-- **Escalação.** Quando não é pra Brenda resolver (o cliente quer falar com uma
-  pessoa, uma reclamação, algo fora do cardápio), acione o dono por uma **chamada
-  HTTP**: adicione `POST /owner/notify` no `app.ts` e faça o pipeline chamá-lo. Trate
-  a falha da chamada sem derrubar o atendimento.
-- **Observabilidade.** Instrumente as chamadas de LLM (o que entrou, o que o modelo
-  decidiu, tokens, latência) e **persista esse rastro num arquivo** — não só no
-  console.
+verdade** contra o server no ar: a precisão do `/orders` é uma **nota** (maximize), e
+o `GET /` é pass/fail.
 
 ## O que já vem pronto
 
