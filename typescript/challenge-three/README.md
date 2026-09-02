@@ -1,7 +1,7 @@
 # Desafio Técnico — Brenda: montar o pedido a partir da conversa (TypeScript)
 
-> Nível **pleno**. Take-home assíncrono. Depois marcamos uma conversa curta pra
-> você apresentar e a gente estender junto.
+> Vaga de **Software Engineer (Conversational AI)**. Take-home assíncrono. Depois
+> marcamos uma conversa curta pra você apresentar e a gente estender junto.
 
 ## Contexto
 
