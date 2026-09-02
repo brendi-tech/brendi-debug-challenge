@@ -10,6 +10,32 @@
 > mas **não se sustenta no walkthrough** (não explica o *porquê*, trava ao estender)
 > é AI-shaped: o ao-vivo é o filtro.
 
+## Distribuição pro candidato (zip)
+
+O candidato recebe um **zip gerado por `git archive`** da branch do desafio — **NÃO**
+um clone (clone carrega branches + histórico + a `solution/*`). Da raiz do repo:
+
+```bash
+git archive --format=zip -o challenge-three.zip \
+  feat/challenge-three-conversational:typescript/challenge-three
+```
+
+Por que é seguro:
+
+- `git archive` exporta **só arquivos trackeados** no commit → `.env` (a chave real),
+  `node_modules/` e `llm-calls.jsonl` (gitignored) **não entram**.
+- O `.gitattributes` marca `INTERVIEWER.md`, `SOLUTION.md` e ele mesmo como
+  `export-ignore` → **não entram** no zip (o candidato nem descobre que existe rubrica).
+- Só o subtree `typescript/challenge-three` (não o monorepo inteiro) e só a branch do
+  desafio — a `solution/*` nem é tocada.
+
+**Sempre gere da branch do desafio (`feat/challenge-three-conversational`), nunca da
+`solution/*`.** Confira antes de mandar:
+
+```bash
+unzip -l challenge-three.zip | grep -E "INTERVIEWER|SOLUTION" && echo "VAZOU — NÃO mande" || echo "limpo"
+```
+
 Testa o que define **pleno** pra gente: desenhar um pipeline LLM **confiável e
 testável** e pensar em **precisão / latência / custo em escala** — não só "sabe
 codar". De propósito, o desafio é **aberto**: uma função (`handleConversation`),
