@@ -1,0 +1,133 @@
+{
+  "storeId": "brenda-burger-sjc",
+  "storeName": "Brenda Burger",
+  "categories": [
+    { "slug": "burgers", "name": "Hambúrgueres", "type": "normal", "productsPaths": ["x-salada", "x-bacon", "x-tudo"] },
+    { "slug": "acompanhamentos", "name": "Acompanhamentos", "type": "normal", "productsPaths": ["batata"] },
+    { "slug": "bebidas", "name": "Bebidas", "type": "normal", "productsPaths": ["refri", "milkshake"] },
+    { "slug": "marmitas", "name": "Marmitas", "type": "normal", "productsPaths": ["marmita"] },
+    { "slug": "combos", "name": "Combos", "type": "normal", "productsPaths": ["combo-x-salada"] }
+  ],
+  "products": [
+    {
+      "slug": "x-salada",
+      "categoryPath": "burgers",
+      "name": "X-Salada",
+      "aliases": ["xis salada", "x salada", "hambúrguer com salada"],
+      "price": 22,
+      "customsPaths": ["add-burger"],
+      "active": true
+    },
+    {
+      "slug": "x-bacon",
+      "categoryPath": "burgers",
+      "name": "X-Bacon",
+      "aliases": ["xis bacon", "x bacon"],
+      "price": 26,
+      "customsPaths": [],
+      "active": true
+    },
+    {
+      "slug": "x-tudo",
+      "categoryPath": "burgers",
+      "name": "X-Tudo",
+      "aliases": ["xis tudo", "x tudo", "completo"],
+      "price": 32,
+      "customsPaths": ["add-burger"],
+      "active": true
+    },
+    {
+      "slug": "batata",
+      "categoryPath": "acompanhamentos",
+      "name": "Batata Frita",
+      "aliases": ["fritas", "batatinha"],
+      "price": 15,
+      "customsPaths": ["tamanho-batata"],
+      "active": true
+    },
+    {
+      "slug": "refri",
+      "categoryPath": "bebidas",
+      "name": "Refrigerante",
+      "aliases": ["refri", "bebida", "coca", "guaraná"],
+      "price": 7,
+      "customsPaths": ["sabor-refri"],
+      "active": true
+    },
+    {
+      "slug": "marmita",
+      "categoryPath": "marmitas",
+      "name": "Marmita",
+      "aliases": ["quentinha", "prato feito", "pf"],
+      "price": 28,
+      "customsPaths": ["carne-marmita"],
+      "active": true
+    },
+    {
+      "slug": "combo-x-salada",
+      "categoryPath": "combos",
+      "name": "Combo X-Salada",
+      "aliases": ["combo x salada", "combo salada"],
+      "price": 35,
+      "customsPaths": [],
+      "active": true
+    },
+    {
+      "slug": "milkshake",
+      "categoryPath": "bebidas",
+      "name": "Milkshake",
+      "aliases": ["shake"],
+      "price": 18,
+      "customsPaths": [],
+      "active": false
+    }
+  ],
+  "customs": [
+    {
+      "path": "add-burger",
+      "title": "Adicionais",
+      "type": "check",
+      "minChoices": 0,
+      "maxChoices": 4,
+      "choices": [
+        { "id": "bacon", "title": "Bacon", "extraPrice": 4 },
+        { "id": "ovo", "title": "Ovo", "extraPrice": 2.5 },
+        { "id": "cheddar", "title": "Cheddar extra", "extraPrice": 3.5 }
+      ]
+    },
+    {
+      "path": "tamanho-batata",
+      "title": "Tamanho",
+      "type": "unique",
+      "required": true,
+      "choices": [
+        { "id": "p", "title": "P", "extraPrice": 0 },
+        { "id": "m", "title": "M", "extraPrice": 5 },
+        { "id": "g", "title": "G", "extraPrice": 9 }
+      ]
+    },
+    {
+      "path": "sabor-refri",
+      "title": "Sabor",
+      "type": "unique",
+      "required": true,
+      "choices": [
+        { "id": "coca", "title": "Coca-Cola", "extraPrice": 0 },
+        { "id": "guarana", "title": "Guaraná", "extraPrice": 0 }
+      ]
+    },
+    {
+      "path": "carne-marmita",
+      "title": "Carne",
+      "type": "increase",
+      "minChoices": 1,
+      "maxChoices": 3,
+      "includedQuantity": 1,
+      "choices": [
+        { "id": "frango", "title": "Frango", "extraPrice": 9 },
+        { "id": "bife", "title": "Bife", "extraPrice": 9 },
+        { "id": "linguica", "title": "Linguiça", "extraPrice": 9 }
+      ]
+    }
+  ]
+}

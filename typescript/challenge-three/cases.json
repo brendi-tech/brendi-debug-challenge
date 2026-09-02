@@ -1,0 +1,67 @@
+[
+  {
+    "useCase": "simples (histórico antigo do mesmo cliente)",
+    "messages": [
+      { "from": "customer", "text": "oi", "at": "2026-08-20T12:00:00Z" },
+      { "from": "store", "text": "Oi! Bem-vindo de volta 😊", "at": "2026-08-20T12:00:05Z" },
+      { "from": "customer", "text": "o pedido de ontem chegou certinho, valeu", "at": "2026-08-20T12:01:00Z" },
+      { "from": "store", "text": "Que bom! Precisando é só chamar.", "at": "2026-08-20T12:01:10Z" },
+      { "from": "customer", "text": "boa noite", "at": "2026-08-29T20:30:00Z" },
+      { "from": "customer", "text": "oi, quero um x-salada", "at": "2026-08-29T20:31:00Z" }
+    ],
+    "expectedCheckout": { "products": [{ "productId": "x-salada", "quantity": 1 }], "totalPrice": 22 }
+  },
+  {
+    "useCase": "quantidade",
+    "messages": [{ "from": "customer", "text": "me vê 2 x-tudo por favor" }],
+    "expectedCheckout": { "products": [{ "productId": "x-tudo", "quantity": 2 }], "totalPrice": 64 }
+  },
+  {
+    "useCase": "adicionais + remoção",
+    "messages": [{ "from": "customer", "text": "um x-salada com bacon e ovo, mas sem cebola" }],
+    "expectedCheckout": {
+      "products": [{ "productId": "x-salada", "quantity": 1, "chosen": [{ "choiceId": "bacon" }, { "choiceId": "ovo" }] }],
+      "totalPrice": 28.5
+    }
+  },
+  {
+    "useCase": "ambiguidade (não alucinar)",
+    "messages": [{ "from": "customer", "text": "me vê um hambúrguer" }],
+    "expectClarification": true
+  },
+  {
+    "useCase": "incluso vs extra (marmita)",
+    "messages": [
+      { "from": "customer", "text": "oi, vcs têm marmita?" },
+      { "from": "store", "text": "Temos sim! Qual carne você quer?" },
+      { "from": "customer", "text": "quero uma marmita com bife e frango" }
+    ],
+    "expectedCheckout": {
+      "products": [{ "productId": "marmita", "quantity": 1, "chosen": [{ "choiceId": "bife" }, { "choiceId": "frango" }] }],
+      "totalPrice": 37
+    }
+  },
+  {
+    "useCase": "mudança de ideia",
+    "messages": [
+      { "from": "customer", "text": "quero um x-bacon" },
+      { "from": "customer", "text": "ah não, deixa um x-salada mesmo" }
+    ],
+    "expectedCheckout": { "products": [{ "productId": "x-salada", "quantity": 1 }], "totalPrice": 22 }
+  },
+  {
+    "useCase": "escolha obrigatória + 2 produtos",
+    "messages": [
+      { "from": "customer", "text": "boa noite", "at": "2026-08-29T20:00:00Z" },
+      { "from": "store", "text": "Boa noite! O que vai ser?", "at": "2026-08-29T20:00:10Z" },
+      { "from": "customer", "text": "uma batata grande e uma coca", "at": "2026-08-29T20:01:00Z" }
+    ],
+    "expectedCheckout": {
+      "products": [
+        { "productId": "batata", "quantity": 1, "chosen": [{ "choiceId": "g" }] },
+        { "productId": "refri", "quantity": 1, "chosen": [{ "choiceId": "coca" }] }
+      ],
+      "totalPrice": 31
+    }
+  }
+]
