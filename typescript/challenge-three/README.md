@@ -24,8 +24,7 @@ handleConversation(conversation, menu, llm): Promise<Result>
 
 Ela recebe a conversa e o cardápio e devolve o pedido montado (um `Checkout` com
 `totalPrice`), ou uma recusa quando for inválido / ambíguo. **Como você organiza o
-pipeline por dentro é decisão sua** — o que delega pra LLM, o que garante em código,
-como valida e precifica. O stub está em `src/handleConversation.ts`.
+pipeline por dentro é decisão sua.** O stub está em `src/handleConversation.ts`.
 
 A conversa tem os **dois lados** (`customer` / `store`), com timestamps, e é **longa
 por padrão**: pode carregar histórico antigo (mensagens de sessões passadas do mesmo
@@ -53,7 +52,7 @@ npm install
 **Enquanto você desenvolve** — instantâneo, sem server e sem chave. É o seu loop:
 
 ```bash
-npm test              # contrato determinístico: LLM controlada testa preço/guardrails
+npm test              # LLM controlada (makeFakeLLM), in-process — sem chave, sem server
 ```
 
 **Pra ver o real end-to-end** — precisa da chave (`cp .env.example .env`) e de **dois
@@ -66,11 +65,10 @@ npm start
 npm run test:api
 ```
 
-Por que dois: `npm test` roda a lógica com uma **LLM de teste** (`makeFakeLLM`), então
-é determinístico, grátis e instantâneo — dá pra testar até o que a LLM real nunca
-faria de propósito (produto inválido, etc.). `npm run test:api` usa a **LLM de
-verdade** contra o server no ar: a precisão do `/orders` é uma **nota** (maximize), e
-o `GET /` é pass/fail.
+Por que dois: `npm test` roda com uma **LLM de teste** (`makeFakeLLM`) que você
+controla, então é grátis e instantâneo — o seu loop. `npm run test:api` usa a **LLM
+de verdade** contra o server no ar: a precisão do `/orders` é uma **nota** (maximize),
+e o `GET /` é pass/fail.
 
 ## O que já vem pronto
 
